@@ -7,10 +7,8 @@ Skimmer = cms.EDAnalyzer("Skimmer",
     tagDiamondRecHits = cms.InputTag("ctppsDiamondRecHits"),
     tagDiamondLocalTracks = cms.InputTag("ctppsDiamondLocalTracks"),
     tagLocalTrack = cms.InputTag("totemRPLocalTrackFitter"),
-    
     excludeMultipleHits = cms.bool(True),
     minimumStripAngleForTomography = cms.double(0.1),
-    centralOOT = cms.int32(2),
-  
+    centralOOT = cms.int32(2),  
     verbosity = cms.untracked.uint32(10)
 )

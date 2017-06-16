@@ -10,6 +10,9 @@
 <use   name="DataFormats/CTPPSDigi"/>
 <use   name="DataFormats/CTPPSReco"/>
 <use   name="Geometry/Records"/>
+<use   name="HLTrigger/HLTcore"/>
+<use   name="DataFormats/L1GlobalTrigger"/>
+<use   name="DataFormats/L1Trigger"/>
 <use   name="Geometry/VeryForwardGeometryBuilder"/>
 <use   name="Geometry/VeryForwardRPTopology"/>
 <use   name="rootcore"/>

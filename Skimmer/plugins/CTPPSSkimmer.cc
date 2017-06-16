@@ -31,14 +31,13 @@ CTPPSSkimmer::CTPPSSkimmer(const edm::ParameterSet &iConfig):
   tokenDiamondHit_  ( consumes< edm::DetSetVector<CTPPSDiamondRecHit> >    (iConfig.getParameter<edm::InputTag>( "tagDiamondRecHits" ) ) ),
   tokenDiamondTrack_( consumes< edm::DetSetVector<CTPPSDiamondLocalTrack> >(iConfig.getParameter<edm::InputTag>( "tagDiamondLocalTracks" ) ) ),
   tokenFEDInfo_     ( consumes< std::vector<TotemFEDInfo> >                (iConfig.getParameter<edm::InputTag>( "tagFEDInfo" ) ) ),
-  verbosity_        (iConfig.getUntrackedParameter<unsigned int>( "verbosity", 0 ) )
+  verbosity_        (iConfig.getUntrackedParameter<unsigned int>( "verbosity", 0 ) ),
+  hltMenuLabel_     (iConfig.getParameter<std::string>("HLTMenuLabel")),
+  triggersList_     (iConfig.getParameter<std::vector<std::string> >("TriggersList")),
+  triggerResultsToken_(consumes<edm::TriggerResults> (iConfig.getParameter<edm::InputTag>("TriggerResults")))
 {
-  //now do what ever initialization is needed
-  usesResource("TFileService");
-  edm::Service<TFileService> fs;
-  tree_ = fs->make<TTree>("CTPPSSkimmerDiamond", "CTPPSSkimmerDiamond");
-}
 
+}
 
 CTPPSSkimmer::~CTPPSSkimmer()
 {
@@ -51,6 +50,55 @@ CTPPSSkimmer::~CTPPSSkimmer()
 //
 // member functions
 //
+
+void CTPPSSkimmer::fillTriggerInfo(const edm::Event& iEvent, const edm::EventSetup& iSetup){
+
+  bool debug = true;
+
+  edm::Handle<edm::TriggerResults> triggerResults;
+  iEvent.getByToken(triggerResultsToken_, triggerResults);
+
+  if( triggerResults.isValid() ){
+
+    int nSize = triggerResults->size();
+    const edm::TriggerNames& triggerNames = iEvent.triggerNames(*triggerResults);
+
+    size_t idxpath = 0;
+    std::vector<std::string>::const_iterator hltpath = triggersList_.begin();
+    std::vector<std::string>::const_iterator hltpaths_end = triggersList_.end();
+
+    for(; hltpath != hltpaths_end; ++hltpath,++idxpath){
+      std::string resolvedPathName;
+      if( edm::is_glob( *hltpath ) ){
+	std::vector< std::vector<std::string>::const_iterator > matches = edm::regexMatch(triggerNames.triggerNames(), *hltpath);
+	if( matches.empty() ){
+	  if (debug) edm::LogWarning("Configuration") << "Could not find trigger " << *hltpath << " in the path list.\n";
+	}
+	else if( matches.size() > 1)
+	  throw cms::Exception("Configuration") << "HLT path type " << *hltpath << " not unique\n";
+	else resolvedPathName = *(matches[0]);
+      } else{
+	resolvedPathName = *hltpath;
+      }
+
+      int idx_HLT = triggerNames.triggerIndex(resolvedPathName);
+
+      if (idx_HLT >= 0 && idx_HLT < nSize){
+	int accept_HLT = ( triggerResults->wasrun(idx_HLT) && triggerResults->accept(idx_HLT) ) ? 1 : 0;
+	hltTrigResults_.push_back(accept_HLT);
+	hltTriggerPassHisto_->Fill( (*hltpath).c_str(), accept_HLT );
+      }else{
+	hltTrigResults_.push_back(-1);
+	hltTriggerPassHisto_->Fill( (*hltpath).c_str(), -1 );
+      }
+
+    }
+
+  }else{
+    if (debug) std::cout << "\n No valid trigger result.\n" <<std::endl;
+  }
+
+}
 
 // ------------ method called for each event  ------------
   void
@@ -74,6 +122,12 @@ CTPPSSkimmer::analyze(const edm::Event& iEvent, const edm::EventSetup& iSetup)
   getYWidth_vec.clear();
   getFedId_vec.clear();
   getBX_vec.clear();
+  hltTrigResults_.clear();
+  bx_cms = -1;
+  lumi_section = -1;
+  orbit = -1;
+
+  fillTriggerInfo(iEvent,iSetup);
 
   edm::Handle< edm::DetSetVector<TotemVFATStatus> > diamondVFATStatus;
   iEvent.getByToken( tokenStatus_, diamondVFATStatus );
@@ -98,6 +152,10 @@ CTPPSSkimmer::analyze(const edm::Event& iEvent, const edm::EventSetup& iSetup)
   valid &= diamondVFATStatus.isValid();
   valid &= diamondDigis.isValid();
   valid &= fedInfo.isValid();
+
+  bx_cms = iEvent.bunchCrossing();
+  lumi_section = iEvent.luminosityBlock();
+  orbit = iEvent.orbitNumber();
 
   for ( const auto& rechits : *diamondRecHits ) {
     const CTPPSDiamondDetId detId( rechits.detId() );
@@ -147,6 +205,28 @@ CTPPSSkimmer::analyze(const edm::Event& iEvent, const edm::EventSetup& iSetup)
 CTPPSSkimmer::beginJob()
 {
 
+  //now do what ever initialization is needed
+  usesResource("TFileService");
+  edm::Service<TFileService> fs;
+  tree_ = fs->make<TTree>("CTPPSSkimmerDiamond", "CTPPSSkimmerDiamond");
+
+  std::ostringstream oss;
+  TFileDirectory triggerDir = fs->mkdir("TriggerInfo");
+  hltTriggerNamesHisto_ = triggerDir.make<TH1F>("HLTTriggerNames","HLTTriggerNames",1,0,1);
+  for(unsigned k=0; k < triggersList_.size(); ++k){
+    oss << "Using HLT reference trigger " << triggersList_[k] << std::endl;
+    hltTriggerNamesHisto_->Fill(triggersList_[k].c_str(),1);
+  }
+  edm::LogVerbatim("Analysis") << oss.str();
+  hltTriggerPassHisto_ = triggerDir.make<TH1F>("HLTTriggerPass","HLTTriggerPass",1,0,1);
+
+  fs->cd();
+
+  tree_->Branch("valid", &valid, "valid/B");
+  tree_->Branch("getBxCMS", &bx_cms, "bx_cms/I");
+  tree_->Branch("getOrbitCMS", &orbit, "orbit/I");
+  tree_->Branch("getLsCMS", &lumi_section, "lumi_section/I");
+  tree_->Branch("HLT", &hltTrigResults_);
   tree_->Branch("arm", &arm_vec);
   tree_->Branch("station", &station_vec);
   tree_->Branch("rp", &rp_vec);
@@ -161,7 +241,7 @@ CTPPSSkimmer::beginJob()
   tree_->Branch("getY", &getY_vec);
   tree_->Branch("getYWidth", &getYWidth_vec);
   tree_->Branch("getFedId", &getFedId_vec);
-  tree_->Branch("getBX", &getBX_vec);
+  tree_->Branch("getBx", &getBX_vec);
 
 }
 
@@ -169,6 +249,7 @@ CTPPSSkimmer::beginJob()
   void 
 CTPPSSkimmer::endJob() 
 {
+
 }
 
 // ------------ method fills 'descriptions' with the allowed parameters for the module  ------------

@@ -1,5 +1,5 @@
-#ifndef CTPPSAnalyzer_CTPPSSkimmer_h
-#define CTPPSAnalyzer_CTPPSSkimmer_h
+#ifndef CTPPSDiamondAnalyzer_CTPPSSkimmer_h
+#define CTPPSDiamondAnalyzer_CTPPSSkimmer_h
 
 // System Inputs
 #include <fstream>
@@ -13,6 +13,7 @@
 #include "FWCore/Framework/interface/MakerMacros.h"
 #include "FWCore/ParameterSet/interface/ParameterSet.h"
 #include "FWCore/ServiceRegistry/interface/Service.h"
+#include "FWCore/Utilities/interface/RegexMatch.h"
 #include "CommonTools/UtilAlgos/interface/TFileService.h"
 
 // CMSSW Data Formats
@@ -24,6 +25,9 @@
 #include "DataFormats/CTPPSDigi/interface/CTPPSDiamondDigi.h"
 #include "DataFormats/CTPPSReco/interface/CTPPSDiamondRecHit.h"
 #include "DataFormats/CTPPSReco/interface/CTPPSDiamondLocalTrack.h"
+#include "FWCore/Framework/interface/TriggerNamesService.h"
+#include "DataFormats/Common/interface/TriggerResults.h"
+#include "FWCore/Common/interface/TriggerNames.h"
 
 // ROOT
 #include <TFile.h>
@@ -31,6 +35,7 @@
 #include <TVector3.h>
 #include <TLorentzVector.h>
 #include <TH1D.h>
+#include <TDirectory.h>
 
 // Constants
 #define SEC_PER_LUMI_SECTION 23.31
@@ -63,11 +68,13 @@ class CTPPSSkimmer : public edm::one::EDAnalyzer<edm::one::SharedResources>  {
     ~CTPPSSkimmer();
     static void fillDescriptions(edm::ConfigurationDescriptions& descriptions);
 
+
   private:
     virtual void beginJob() override;
     virtual void analyze(const edm::Event&, const edm::EventSetup&) override;
     virtual void endJob() override;
-
+    virtual void fillTriggerInfo(const edm::Event&, const edm::EventSetup&);
+    int TriggerNum(std::string);
     edm::EDGetTokenT< edm::DetSetVector<TotemVFATStatus> > tokenStatus_;
     edm::EDGetTokenT< edm::DetSetVector<TotemRPLocalTrack> > tokenLocalTrack_;
     edm::EDGetTokenT< edm::DetSetVector<CTPPSDiamondDigi> > tokenDigi_;
@@ -76,6 +83,9 @@ class CTPPSSkimmer : public edm::one::EDAnalyzer<edm::one::SharedResources>  {
     edm::EDGetTokenT< std::vector<TotemFEDInfo> > tokenFEDInfo_;
     unsigned int verbosity_;
     bool valid;
+    std::string hltMenuLabel_;
+    std::vector<std::string> triggersList_;
+    edm::EDGetTokenT<edm::TriggerResults> triggerResultsToken_;
 
     std::vector<int> arm_vec;
     std::vector<int> station_vec;
@@ -92,9 +102,15 @@ class CTPPSSkimmer : public edm::one::EDAnalyzer<edm::one::SharedResources>  {
     std::vector<double> getYWidth_vec;
     std::vector<int> getFedId_vec;
     std::vector<int> getBX_vec;
+    std::vector<int> hltTrigResults_;
+
+    int bx_cms;
+    int lumi_section;
+    int orbit;
 
 };
 
 TTree* tree_;
+TH1F *hltTriggerPassHisto_,*hltTriggerNamesHisto_;
 
 #endif
