@@ -3,49 +3,158 @@
 #include <TH2.h>
 #include <TStyle.h>
 #include <TCanvas.h>
+#include <TLorentzVector.h>
+#include <TSystem.h>
+#include <TROOT.h>
+#include <TH1.h>
+#include "TH1.h"
+#include "TF1.h"
+#include "TFile.h"
+#include "TH1F.h"
+#include "TMath.h"
 
-void CTPPSSkimmerAnalyzer::Loop()
-{
-  //   In a ROOT session, you can do:
-  //      root> .L CTPPSSkimmerAnalyzer.C
-  //      root> CTPPSSkimmerAnalyzer t
-  //      root> t.GetEntry(12); // Fill t data members with entry number 12
-  //      root> t.Show();       // Show values of entry 12
-  //      root> t.Show(16);     // Read and show values of entry 16
-  //      root> t.Loop();       // Loop on all entries
-  //
+#include <TH2.h>
+#include <TFile.h>
+#include <TCanvas.h>
+#include <TSpline.h>
+#include <TMath.h>
+#include <TRandom3.h>
+#include <TF1.h>
+#include <fstream>
+#include <iostream>
+#include <vector>
+#include <string>
+#include <TString.h>
+#include <set>
+#include <TString.h>
 
-  //     This is the loop skeleton where:
-  //    jentry is the global entry number in the chain
-  //    ientry is the entry number in the current Tree
-  //  Note that the argument to GetEntry must be:
-  //    jentry for TChain::GetEntry
-  //    ientry for TTree::GetEntry and TBranch::GetEntry
-  //
-  //       To read only selected branches, Insert statements like:
-  // METHOD1:
-  //    fChain->SetBranchStatus("*",0);  // disable all branches
-  //    fChain->SetBranchStatus("branchname",1);  // activate branchname
-  // METHOD2: replace line
-  //    fChain->GetEntry(jentry);       //read all branches
-  //by  b_branchname->GetEntry(ientry); //read only this branch
+#include <vector>
+#include <stdlib.h>
+
+using namespace std;
+
+vector<TH1I*> hVector_h_cms_bx;
+vector<vector<TH1D*> > hVector_h_ch;
+vector<string> Folders;
+
+void CTPPSSkimmerAnalyzer::CreateHistos(){
+
+  // vector<string> Folders;
+  Folders.push_back("step0");
+  Folders.push_back("step1");
+  Folders.push_back("step2");
+
+  for (std::vector<std::string>::size_type i=0; i<Folders.size(); i++){
+
+    hVector_h_ch.push_back( std::vector<TH1D*>() );
+
+    char name[300];
+    sprintf(name,"CMSBX_%s",Folders.at(i).c_str());
+    TH1I *histo_cms_bx = new TH1I(name,";CMS BX; N events",3600,0,3600);
+    hVector_h_cms_bx.push_back(histo_cms_bx);
+
+    TString htitle;
+    for (UInt_t ch_i = 0; ch_i < CTPPS_DIAMOND_NUM_OF_CHANNELS; ++ch_i){
+      htitle = ";Time [ns]; N events";
+      sprintf(name,"arm0_pl0_ch%i_%s", ch_i, Folders.at(i).c_str());
+      TH1D *histo_ch = new TH1D(name,";Time [ns]; N events",500,0,125);
+      hVector_h_ch[i].push_back(histo_ch);
+    }
+  }
+
+}
+void CTPPSSkimmerAnalyzer::Loop(){
+
+  CreateHistos();
+
+  TH1::SetDefaultSumw2();
+  TH2::SetDefaultSumw2();
+
   if (fChain == 0) return;
 
   Long64_t nentries = fChain->GetEntriesFast();
-
   Long64_t nbytes = 0, nb = 0;
+
+  // Loop over all events...
   for (Long64_t jentry=0; jentry<nentries;jentry++) {
+
     Long64_t ientry = LoadTree(jentry);
     if (ientry < 0) break;
     nb = fChain->GetEntry(jentry);   nbytes += nb;
-    // if (Cut(ientry) < 0) continue;
+    if (jentry%10000 == 0) cout << jentry << " out of "<<nentries << endl; 
 
-    std::cout << "---> \n" << std::endl;
-    std::cout << "HLT Size: " << HLT->size() << std::endl;
+    bool HLT_trigger = false;
     for (UInt_t j = 0; j < HLT->size(); ++j) {
-      std::cout << "HLT[" << j << "]: " << HLT->at(j) << std::endl;
+      if(HLT->at(j)==1) HLT_trigger = true;
     }
-    std::cout << "---> \n" << std::endl;
 
+    bool isolatedBx = false;
+    for (UInt_t j = 0; j < getBx->size(); ++j) {
+      if(getBx->at(j)==47) isolatedBx = true;
+    }
+
+    bool isolatedBxCMS = false;
+    if(getBxCMS == 47) isolatedBxCMS = true;
+
+    bool step0 = false;
+
+    FillHistos(0); 
+    if(valid && isolatedBxCMS){
+      step0 = true;
+      FillHistos(1); 
+    }
+    if(step0 && HLT_trigger){
+      FillHistos(2);
+    }
+
+  } // Loop over all events...
+
+  WriteHistos();
+
+}
+
+void CTPPSSkimmerAnalyzer::FillHistos(int i){
+
+  hVector_h_cms_bx[i]->Fill(getBxCMS);
+
+  for (UInt_t arm_i = 0; arm_i < arm->size(); ++arm_i) {
+    for (UInt_t pl_i = 0; pl_i < plane->size(); ++pl_i) {
+      for (UInt_t ch_i = 0; ch_i < channel->size(); ++ch_i) {
+	for (UInt_t j = 0; j < getOOTIndex->size(); ++j) {
+	  for (UInt_t k = 0; k < getT->size(); ++k) {
+	    if (arm->at(arm_i) == 1 && plane->at(pl_i) == 0){
+	      if(getOOTIndex->at(j)==0) hVector_h_ch[i].at(channel->at(ch_i))->Fill(getT->at(k));
+	      if(getOOTIndex->at(j)==1) hVector_h_ch[i].at(channel->at(ch_i))->Fill(getT->at(k)+25);
+	      if(getOOTIndex->at(j)==2) hVector_h_ch[i].at(channel->at(ch_i))->Fill(getT->at(k)+50);
+	      if(getOOTIndex->at(j)==3) hVector_h_ch[i].at(channel->at(ch_i))->Fill(getT->at(k)+75);
+	      if(getOOTIndex->at(j)==4) hVector_h_ch[i].at(channel->at(ch_i))->Fill(getT->at(k)+100);
+	    }
+	  }
+	}
+      }
+    }
   }
+
+}
+
+void CTPPSSkimmerAnalyzer::WriteHistos(){
+
+  TFile* f = new TFile("histo_run295977.root", "RECREATE");
+  for (std::vector<std::string>::size_type i=0; i<Folders.size(); i++){
+    hVector_h_cms_bx[i]->Write();
+    for (UInt_t ch_i = 0; ch_i < CTPPS_DIAMOND_NUM_OF_CHANNELS; ++ch_i){
+      hVector_h_ch[i].at(ch_i)->Write();
+    }
+  }
+  f->Close();
+
+}
+
+int run()
+{
+
+  CTPPSSkimmerAnalyzer m;
+  m.Loop();
+
+  return 0;
 }
