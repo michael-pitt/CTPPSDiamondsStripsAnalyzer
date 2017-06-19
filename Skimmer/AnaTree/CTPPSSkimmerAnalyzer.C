@@ -34,8 +34,7 @@
 using namespace std;
 
 vector<TH1I*> hVector_h_cms_bx;
-vector<TH1D*> hVector_h_plane;
-vector<vector<TH1D*> > hVector_h_ch;
+vector<vector<vector<vector<TH1D*> > > >hVector_h_ch;
 vector<string> Folders;
 
 void CTPPSSkimmerAnalyzer::CreateHistos(){
@@ -47,24 +46,30 @@ void CTPPSSkimmerAnalyzer::CreateHistos(){
 
   for (std::vector<std::string>::size_type i=0; i<Folders.size(); i++){
 
-    hVector_h_ch.push_back( std::vector<TH1D*>() );
+    vector < vector< vector<TH1D*> > > vec_cut;
+    hVector_h_plane.push_back( std::vector<TH1D*>() );
 
     char name[300];
     sprintf(name,"CMSBX_%s",Folders.at(i).c_str());
     TH1I *histo_cms_bx = new TH1I(name,";CMS BX; N events",3600,0,3600);
     hVector_h_cms_bx.push_back(histo_cms_bx);
 
-    sprintf(name,"arm0_pl0_%s", Folders.at(i).c_str());
-    TH1D *histo_plane = new TH1D(name,";Time [ns]; N events",1250,0,125);
-    hVector_h_plane.push_back(histo_plane);
-
     TString htitle;
-    for (UInt_t ch_i = 0; ch_i < CTPPS_DIAMOND_NUM_OF_CHANNELS; ++ch_i){
-      htitle = ";Time [ns]; N events";
-      sprintf(name,"arm0_pl0_ch%i_%s", ch_i, Folders.at(i).c_str());
-      TH1D *histo_ch = new TH1D(name,";Time [ns]; N events",1250,0,125);
-      hVector_h_ch[i].push_back(histo_ch);
+    for (UInt_t arm_i = 0; arm_i < CTPPS_NUM_OF_ARMS; ++arm_i){
+      vector< vector<TH1D*> > vec_arm;
+      for (UInt_t pl_i = 0; pl_i < CTPPS_DIAMOND_NUM_OF_PLANES; ++pl_i){
+	vector<TH1D*> vec_pl;
+	for (UInt_t ch_i = 0; ch_i < CTPPS_DIAMOND_NUM_OF_CHANNELS; ++ch_i){
+	  htitle = ";Time [ns]; N events";
+	  sprintf(name,"arm%i_pl%i_ch%i_%s", arm_i, pl_i, ch_i, Folders.at(i).c_str());
+	  TH1D *histo_ch = new TH1D(name,";Time [ns]; N events",1250,0,125);
+	  vec_pl.push_back(histo_ch);
+	}
+	vec_arm.push_back(vec_pl);
+      }
+      vec_cut.push_back( vec_arm );
     }
+    hVector_h_ch.push_back( vec_cut );
   }
 
 }
@@ -120,28 +125,7 @@ void CTPPSSkimmerAnalyzer::FillHistos(int i){
   hVector_h_cms_bx[i]->Fill(getBxCMS);
 
   for (UInt_t j = 0; j < getT->size(); ++j) {
-    if(arm->at(j) == 1 && plane->at(j) == 2){
-      if(getOOTIndex->at(j)==0) {
-	hVector_h_ch[i].at(channel->at(j))->Fill(getT->at(j));
-	hVector_h_plane[i]->Fill(getT->at(j));
-      }
-      if(getOOTIndex->at(j)==1){
-	hVector_h_ch[i].at(channel->at(j))->Fill(getT->at(j)+25);
-	hVector_h_plane[i]->Fill(getT->at(j)+25);
-      }
-      if(getOOTIndex->at(j)==2){
-	hVector_h_ch[i].at(channel->at(j))->Fill(getT->at(j)+50);
-	hVector_h_plane[i]->Fill(getT->at(j)+50);
-      }
-      if(getOOTIndex->at(j)==3){
-	hVector_h_ch[i].at(channel->at(j))->Fill(getT->at(j)+75);
-	hVector_h_plane[i]->Fill(getT->at(j)+75);
-      }
-      if(getOOTIndex->at(j)==4){
-	hVector_h_ch[i].at(channel->at(j))->Fill(getT->at(j)+100);
-	hVector_h_plane[i]->Fill(getT->at(j)+100);
-      }
-    }
+    hVector_h_ch[i].at(arm->at(j)).at(plane->at(j)).at(channel->at(j))->Fill(getT->at(j)+25.*getOOTIndex->at(j));
   }
 
 }
@@ -151,9 +135,12 @@ void CTPPSSkimmerAnalyzer::WriteHistos(){
   TFile* f = new TFile("histo_run295977.root", "RECREATE");
   for (std::vector<std::string>::size_type i=0; i<Folders.size(); i++){
     hVector_h_cms_bx[i]->Write();
-    hVector_h_plane[i]->Write();
-    for (UInt_t ch_i = 0; ch_i < CTPPS_DIAMOND_NUM_OF_CHANNELS; ++ch_i){
-      hVector_h_ch[i].at(ch_i)->Write();
+    for (UInt_t arm_i = 0; arm_i < CTPPS_NUM_OF_ARMS; ++arm_i){
+      for (UInt_t pl_i = 0; pl_i < CTPPS_DIAMOND_NUM_OF_PLANES; ++pl_i){
+	for (UInt_t ch_i = 0; ch_i < CTPPS_DIAMOND_NUM_OF_CHANNELS; ++ch_i){
+	  hVector_h_ch[i].at(arm_i).at(pl_i).at(ch_i)->Write();
+	}
+      }    
     }
   }
   f->Close();
