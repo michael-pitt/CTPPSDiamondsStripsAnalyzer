@@ -57,7 +57,7 @@ void CTPPSSkimmerAnalyzer::CreateHistos(){
     for (UInt_t ch_i = 0; ch_i < CTPPS_DIAMOND_NUM_OF_CHANNELS; ++ch_i){
       htitle = ";Time [ns]; N events";
       sprintf(name,"arm0_pl0_ch%i_%s", ch_i, Folders.at(i).c_str());
-      TH1D *histo_ch = new TH1D(name,";Time [ns]; N events",500,0,125);
+      TH1D *histo_ch = new TH1D(name,";Time [ns]; N events",1250,0,125);
       hVector_h_ch[i].push_back(histo_ch);
     }
   }
@@ -90,11 +90,18 @@ void CTPPSSkimmerAnalyzer::Loop(){
 
     bool isolatedBx = false;
     for (UInt_t j = 0; j < getBx->size(); ++j) {
-      if(getBx->at(j)==47) isolatedBx = true;
+      if(getBx->at(j)==7 || getBx->at(j)==47 || getBx->at(j)==87) isolatedBx = true;
     }
 
     bool isolatedBxCMS = false;
-    if(getBxCMS == 47) isolatedBxCMS = true;
+    if(getBxCMS == 7 || getBxCMS == 47 || getBxCMS==87) isolatedBxCMS = true;
+
+    bool match = false;
+    if(getBx->size()>0){
+      if(getBxCMS-getBx->at(0)==0) match=true;
+    }
+
+    bool ValidGetToT = false;
 
     bool step0 = false;
 
@@ -117,21 +124,13 @@ void CTPPSSkimmerAnalyzer::FillHistos(int i){
 
   hVector_h_cms_bx[i]->Fill(getBxCMS);
 
-  for (UInt_t arm_i = 0; arm_i < arm->size(); ++arm_i) {
-    for (UInt_t pl_i = 0; pl_i < plane->size(); ++pl_i) {
-      for (UInt_t ch_i = 0; ch_i < channel->size(); ++ch_i) {
-	for (UInt_t j = 0; j < getOOTIndex->size(); ++j) {
-	  for (UInt_t k = 0; k < getT->size(); ++k) {
-	    if (arm->at(arm_i) == 1 && plane->at(pl_i) == 0){
-	      if(getOOTIndex->at(j)==0) hVector_h_ch[i].at(channel->at(ch_i))->Fill(getT->at(k));
-	      if(getOOTIndex->at(j)==1) hVector_h_ch[i].at(channel->at(ch_i))->Fill(getT->at(k)+25);
-	      if(getOOTIndex->at(j)==2) hVector_h_ch[i].at(channel->at(ch_i))->Fill(getT->at(k)+50);
-	      if(getOOTIndex->at(j)==3) hVector_h_ch[i].at(channel->at(ch_i))->Fill(getT->at(k)+75);
-	      if(getOOTIndex->at(j)==4) hVector_h_ch[i].at(channel->at(ch_i))->Fill(getT->at(k)+100);
-	    }
-	  }
-	}
-      }
+  for (UInt_t j = 0; j < getT->size(); ++j) {
+    if(arm->at(j) == 1 && plane->at(j) == 2){
+      if(getOOTIndex->at(j)==0) hVector_h_ch[i].at(channel->at(j))->Fill(getT->at(j));
+      if(getOOTIndex->at(j)==1) hVector_h_ch[i].at(channel->at(j))->Fill(getT->at(j)+25);
+      if(getOOTIndex->at(j)==2) hVector_h_ch[i].at(channel->at(j))->Fill(getT->at(j)+50);
+      if(getOOTIndex->at(j)==3) hVector_h_ch[i].at(channel->at(j))->Fill(getT->at(j)+75);
+      if(getOOTIndex->at(j)==4) hVector_h_ch[i].at(channel->at(j))->Fill(getT->at(j)+100);
     }
   }
 
