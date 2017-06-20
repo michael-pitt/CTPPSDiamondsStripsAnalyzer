@@ -47,7 +47,6 @@ void CTPPSSkimmerAnalyzer::CreateHistos(){
   for (std::vector<std::string>::size_type i=0; i<Folders.size(); i++){
 
     vector < vector< vector<TH1D*> > > vec_cut;
-    hVector_h_plane.push_back( std::vector<TH1D*>() );
 
     char name[300];
     sprintf(name,"CMSBX_%s",Folders.at(i).c_str());
