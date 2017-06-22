@@ -92,6 +92,7 @@ class CTPPSSkimmerAnalyzer {
     virtual void     CreateHistos();
     virtual void     WriteHistos();
     virtual void     FillHistos(int i);
+    virtual int      getFitStatus(char *Migrad);
 
 };
 
