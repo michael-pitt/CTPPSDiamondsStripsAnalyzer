@@ -191,11 +191,13 @@ void CTPPSSkimmerAnalyzer::Loop(){
 
     bool isolatedBx = false;
     for (UInt_t j = 0; j < getBx->size(); ++j) {
-      if(getBx->at(j)==7 || getBx->at(j)==47 || getBx->at(j)==87) isolatedBx = true;
+      //if(getBx->at(j)==7 || getBx->at(j)==47 || getBx->at(j)==87) isolatedBx = true;
+      if(getBx->at(j)==1) isolatedBx = true;
     }
 
     bool isolatedBxCMS = false;
-    if(getBxCMS == 7 || getBxCMS == 47 || getBxCMS==87) isolatedBxCMS = true;
+    //if(getBxCMS == 7 || getBxCMS == 47 || getBxCMS==87) isolatedBxCMS = true;
+    if(getBxCMS == 1) isolatedBxCMS = true;
 
     FillHistos(0); 
     if(isolatedBxCMS){
@@ -265,21 +267,21 @@ void CTPPSSkimmerAnalyzer::WriteHistos(){
   bool save_picture = true;
   TCanvas *c1 = new TCanvas("Calibration","",200,10,600,400);
 
-  TFile* f = new TFile("histo_run295977.root", "RECREATE");
+  TFile* f = new TFile("histo_run296173.root", "RECREATE");
 
   for (std::vector<std::string>::size_type i=0; i<Folders.size(); i++){
 
-    gSystem->mkdir(Form("/afs/cern.ch/work/d/dmf/public/html/TimingCalibration/Run295977/%s/", Folders.at(i).c_str()));
-    gSystem->mkdir(Form("/afs/cern.ch/work/d/dmf/public/html/TimingCalibration/Run295977/%s/getT", Folders.at(i).c_str()));
-    gSystem->mkdir(Form("/afs/cern.ch/work/d/dmf/public/html/TimingCalibration/Run295977/%s/getToT", Folders.at(i).c_str()));
-    gSystem->mkdir(Form("/afs/cern.ch/work/d/dmf/public/html/TimingCalibration/Run295977/%s/check", Folders.at(i).c_str()));
-    gSystem->mkdir(Form("/afs/cern.ch/work/d/dmf/public/html/TimingCalibration/Run295977/%s/result", Folders.at(i).c_str()));
+    gSystem->mkdir(Form("/afs/cern.ch/work/d/dmf/public/html/TimingCalibration/Run296173/%s/", Folders.at(i).c_str()));
+    gSystem->mkdir(Form("/afs/cern.ch/work/d/dmf/public/html/TimingCalibration/Run296173/%s/getT", Folders.at(i).c_str()));
+    gSystem->mkdir(Form("/afs/cern.ch/work/d/dmf/public/html/TimingCalibration/Run296173/%s/getToT", Folders.at(i).c_str()));
+    gSystem->mkdir(Form("/afs/cern.ch/work/d/dmf/public/html/TimingCalibration/Run296173/%s/check", Folders.at(i).c_str()));
+    gSystem->mkdir(Form("/afs/cern.ch/work/d/dmf/public/html/TimingCalibration/Run296173/%s/result", Folders.at(i).c_str()));
 
     hVector_h_cms_bx[i]->Write();
 
     if(save_picture){
       hVector_h_cms_bx[i]->Draw();
-      c1->SaveAs(Form("/afs/cern.ch/work/d/dmf/public/html/TimingCalibration/Run295977/%s/%s.png", Folders.at(i).c_str(), hVector_h_cms_bx[i]->GetName()));
+      c1->SaveAs(Form("/afs/cern.ch/work/d/dmf/public/html/TimingCalibration/Run296173/%s/%s.png", Folders.at(i).c_str(), hVector_h_cms_bx[i]->GetName()));
       c1->Modified();
       c1->Update();
     }
@@ -290,17 +292,17 @@ void CTPPSSkimmerAnalyzer::WriteHistos(){
 
       if(save_picture){
 	hVector_h_arm_getT[i].at(arm_i)->Draw();
-	c1->SaveAs(Form("/afs/cern.ch/work/d/dmf/public/html/TimingCalibration/Run295977/%s/getT/%s.png", Folders.at(i).c_str(), hVector_h_arm_getT[i].at(arm_i)->GetName()));
+	c1->SaveAs(Form("/afs/cern.ch/work/d/dmf/public/html/TimingCalibration/Run296173/%s/getT/%s.png", Folders.at(i).c_str(), hVector_h_arm_getT[i].at(arm_i)->GetName()));
 	c1->Modified();
 	c1->Update();
 
 	hVector_h_arm_getToT[i].at(arm_i)->Draw();
-	c1->SaveAs(Form("/afs/cern.ch/work/d/dmf/public/html/TimingCalibration/Run295977/%s/getToT/%s.png", Folders.at(i).c_str(), hVector_h_arm_getToT[i].at(arm_i)->GetName()));
+	c1->SaveAs(Form("/afs/cern.ch/work/d/dmf/public/html/TimingCalibration/Run296173/%s/getToT/%s.png", Folders.at(i).c_str(), hVector_h_arm_getToT[i].at(arm_i)->GetName()));
 	c1->Modified();
 	c1->Update();
 
 	hVector_h_arm_check[i].at(arm_i)->Draw();
-	c1->SaveAs(Form("/afs/cern.ch/work/d/dmf/public/html/TimingCalibration/Run295977/%s/check/%s.png", Folders.at(i).c_str(), hVector_h_arm_check[i].at(arm_i)->GetName()));
+	c1->SaveAs(Form("/afs/cern.ch/work/d/dmf/public/html/TimingCalibration/Run296173/%s/check/%s.png", Folders.at(i).c_str(), hVector_h_arm_check[i].at(arm_i)->GetName()));
 	c1->Modified();
 	c1->Update();
 
@@ -312,17 +314,17 @@ void CTPPSSkimmerAnalyzer::WriteHistos(){
 
 	if(save_picture){
 	  hVector_h_pl_getT[i].at(arm_i).at(pl_i)->Draw();
-	  c1->SaveAs(Form("/afs/cern.ch/work/d/dmf/public/html/TimingCalibration/Run295977/%s/getT/%s.png", Folders.at(i).c_str(),hVector_h_pl_getT[i].at(arm_i).at(pl_i)->GetName()));
+	  c1->SaveAs(Form("/afs/cern.ch/work/d/dmf/public/html/TimingCalibration/Run296173/%s/getT/%s.png", Folders.at(i).c_str(),hVector_h_pl_getT[i].at(arm_i).at(pl_i)->GetName()));
 	  c1->Modified();
 	  c1->Update();
 
 	  hVector_h_pl_getToT[i].at(arm_i).at(pl_i)->Draw();
-	  c1->SaveAs(Form("/afs/cern.ch/work/d/dmf/public/html/TimingCalibration/Run295977/%s/getToT/%s.png", Folders.at(i).c_str(),hVector_h_pl_getToT[i].at(arm_i).at(pl_i)->GetName()));
+	  c1->SaveAs(Form("/afs/cern.ch/work/d/dmf/public/html/TimingCalibration/Run296173/%s/getToT/%s.png", Folders.at(i).c_str(),hVector_h_pl_getToT[i].at(arm_i).at(pl_i)->GetName()));
 	  c1->Modified();
 	  c1->Update();
 
 	  hVector_h_pl_check[i].at(arm_i).at(pl_i)->Draw();
-	  c1->SaveAs(Form("/afs/cern.ch/work/d/dmf/public/html/TimingCalibration/Run295977/%s/check/%s.png", Folders.at(i).c_str(),hVector_h_pl_check[i].at(arm_i).at(pl_i)->GetName()));
+	  c1->SaveAs(Form("/afs/cern.ch/work/d/dmf/public/html/TimingCalibration/Run296173/%s/check/%s.png", Folders.at(i).c_str(),hVector_h_pl_check[i].at(arm_i).at(pl_i)->GetName()));
 	  c1->Modified();
 	  c1->Update();
 
@@ -365,17 +367,17 @@ void CTPPSSkimmerAnalyzer::WriteHistos(){
 
 	  if(save_picture){
 	    hVector_h_ch_getT[i].at(arm_i).at(pl_i).at(ch_i)->Draw();
-	    c1->SaveAs(Form("/afs/cern.ch/work/d/dmf/public/html/TimingCalibration/Run295977/%s/getT/%s.png",Folders.at(i).c_str(), hVector_h_ch_getT[i].at(arm_i).at(pl_i).at(ch_i)->GetName()));
+	    c1->SaveAs(Form("/afs/cern.ch/work/d/dmf/public/html/TimingCalibration/Run296173/%s/getT/%s.png",Folders.at(i).c_str(), hVector_h_ch_getT[i].at(arm_i).at(pl_i).at(ch_i)->GetName()));
 	    c1->Modified();
 	    c1->Update();
 
 	    hVector_h_ch_getToT[i].at(arm_i).at(pl_i).at(ch_i)->Draw();
-	    c1->SaveAs(Form("/afs/cern.ch/work/d/dmf/public/html/TimingCalibration/Run295977/%s/getToT/%s.png",Folders.at(i).c_str(), hVector_h_ch_getToT[i].at(arm_i).at(pl_i).at(ch_i)->GetName()));
+	    c1->SaveAs(Form("/afs/cern.ch/work/d/dmf/public/html/TimingCalibration/Run296173/%s/getToT/%s.png",Folders.at(i).c_str(), hVector_h_ch_getToT[i].at(arm_i).at(pl_i).at(ch_i)->GetName()));
 	    c1->Modified();
 	    c1->Update();
 
 	    hVector_h_ch_check[i].at(arm_i).at(pl_i).at(ch_i)->Draw();
-	    c1->SaveAs(Form("/afs/cern.ch/work/d/dmf/public/html/TimingCalibration/Run295977/%s/check/%s.png",Folders.at(i).c_str(), hVector_h_ch_check[i].at(arm_i).at(pl_i).at(ch_i)->GetName()));
+	    c1->SaveAs(Form("/afs/cern.ch/work/d/dmf/public/html/TimingCalibration/Run296173/%s/check/%s.png",Folders.at(i).c_str(), hVector_h_ch_check[i].at(arm_i).at(pl_i).at(ch_i)->GetName()));
 	    c1->Modified();
 	    c1->Update();
 
@@ -386,7 +388,7 @@ void CTPPSSkimmerAnalyzer::WriteHistos(){
 	if(save_picture){
 	  hVector_h_pl_result[i].at(arm_i).at(pl_i)->SetStats(0);
 	  hVector_h_pl_result[i].at(arm_i).at(pl_i)->Draw("EP");
-	  c1->SaveAs(Form("/afs/cern.ch/work/d/dmf/public/html/TimingCalibration/Run295977/%s/result/%s.png",Folders.at(i).c_str(), hVector_h_pl_result[i].at(arm_i).at(pl_i)->GetName()));
+	  c1->SaveAs(Form("/afs/cern.ch/work/d/dmf/public/html/TimingCalibration/Run296173/%s/result/%s.png",Folders.at(i).c_str(), hVector_h_pl_result[i].at(arm_i).at(pl_i)->GetName()));
 	  c1->Modified();
 	  c1->Update();
 	}

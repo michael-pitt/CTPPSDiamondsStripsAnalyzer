@@ -1,10 +1,10 @@
 // -*- C++ -*-
 //
-// Package:    CTPPSSkimmer
-// Class:      CTPPSSkimmer
+// Package:    CTPPSRecoSkimmer
+// Class:      CTPPSRecoSkimmer
 // 
 
-/**\class CTPPSSkimmer CTPPSSkimmer.cc CTPPSSkimmer/plugins/CTPPSSkimmer.cc
+/**\class CTPPSRecoSkimmer CTPPSRecoSkimmer.cc CTPPSRecoSkimmer/plugins/CTPPSRecoSkimmer.cc
 
 Description: [one line class summary]
 
@@ -19,12 +19,12 @@ Implementation:
 //
 
 // system include files
-#include "CTPPSSkimmer.h"
+#include "CTPPSRecoSkimmer.h"
 
 //
 // constructors and destructor
 //
-CTPPSSkimmer::CTPPSSkimmer(const edm::ParameterSet &iConfig):
+CTPPSRecoSkimmer::CTPPSRecoSkimmer(const edm::ParameterSet &iConfig):
   tokenStatus_      ( consumes< edm::DetSetVector<TotemVFATStatus> >       (iConfig.getParameter<edm::InputTag>( "tagStatus" ) ) ),
   tokenLocalTrack_  ( consumes< edm::DetSetVector<TotemRPLocalTrack> >     (iConfig.getParameter<edm::InputTag>( "tagLocalTrack" ) ) ),
   tokenDigi_        ( consumes< edm::DetSetVector<CTPPSDiamondDigi> >      (iConfig.getParameter<edm::InputTag>( "tagDigi" ) ) ),
@@ -39,7 +39,7 @@ CTPPSSkimmer::CTPPSSkimmer(const edm::ParameterSet &iConfig):
 
 }
 
-CTPPSSkimmer::~CTPPSSkimmer()
+CTPPSRecoSkimmer::~CTPPSRecoSkimmer()
 {
 
   // do anything here that needs to be done at desctruction time
@@ -51,7 +51,7 @@ CTPPSSkimmer::~CTPPSSkimmer()
 // member functions
 //
 
-void CTPPSSkimmer::fillTriggerInfo(const edm::Event& iEvent, const edm::EventSetup& iSetup){
+void CTPPSRecoSkimmer::fillTriggerInfo(const edm::Event& iEvent, const edm::EventSetup& iSetup){
 
   bool debug = true;
 
@@ -102,7 +102,7 @@ void CTPPSSkimmer::fillTriggerInfo(const edm::Event& iEvent, const edm::EventSet
 
 // ------------ method called for each event  ------------
   void
-CTPPSSkimmer::analyze(const edm::Event& iEvent, const edm::EventSetup& iSetup)
+CTPPSRecoSkimmer::analyze(const edm::Event& iEvent, const edm::EventSetup& iSetup)
 {
 
   using namespace edm;
@@ -186,7 +186,7 @@ CTPPSSkimmer::analyze(const edm::Event& iEvent, const edm::EventSetup& iSetup)
 
   if ( !valid ) {
     if ( verbosity_ ) {
-      edm::LogProblem("CTPPSSkimmer")
+      edm::LogProblem("CTPPSRecoSkimmer")
 	<< "ERROR in TotemDQMModuleRP::analyze > some of the required inputs are not valid. Skipping this event.\n"
 	<< "    diamondVFATStatus.isValid = " << diamondVFATStatus.isValid() << "\n"
 	<< "    diamondDigis.isValid = " << diamondDigis.isValid() << "\n"
@@ -202,7 +202,7 @@ CTPPSSkimmer::analyze(const edm::Event& iEvent, const edm::EventSetup& iSetup)
 
 // ------------ method called once each job just before starting event loop  ------------
   void 
-CTPPSSkimmer::beginJob()
+CTPPSRecoSkimmer::beginJob()
 {
 
   //now do what ever initialization is needed
@@ -247,14 +247,14 @@ CTPPSSkimmer::beginJob()
 
 // ------------ method called once each job just after ending the event loop  ------------
   void 
-CTPPSSkimmer::endJob() 
+CTPPSRecoSkimmer::endJob() 
 {
 
 }
 
 // ------------ method fills 'descriptions' with the allowed parameters for the module  ------------
 void
-CTPPSSkimmer::fillDescriptions(edm::ConfigurationDescriptions& descriptions) {
+CTPPSRecoSkimmer::fillDescriptions(edm::ConfigurationDescriptions& descriptions) {
   //The following says we do not know what parameters are allowed so do no validation
   // Please change this to state exactly what you do use, even if it is no parameters
   edm::ParameterSetDescription desc;
@@ -263,4 +263,4 @@ CTPPSSkimmer::fillDescriptions(edm::ConfigurationDescriptions& descriptions) {
 }
 
 //define this as a plug-in
-DEFINE_FWK_MODULE(CTPPSSkimmer);
+DEFINE_FWK_MODULE(CTPPSRecoSkimmer);

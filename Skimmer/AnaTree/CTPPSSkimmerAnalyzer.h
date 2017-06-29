@@ -104,11 +104,11 @@ CTPPSSkimmerAnalyzer::CTPPSSkimmerAnalyzer(TTree *tree) : fChain(0)
 // if parameter tree is not specified (or zero), connect the file
 // used to generate this class and read the Tree.
    if (tree == 0) {
-      TFile *f = (TFile*)gROOT->GetListOfFiles()->FindObject("run_295977_expressphysics.root");
+      TFile *f = (TFile*)gROOT->GetListOfFiles()->FindObject("/afs/cern.ch/user/d/dmf/private/eos/cms/store/user/dmf/LxBatchOut/CTPPSTimingAnalyzer/run_expressphysics_296173.root");
       if (!f || !f->IsOpen()) {
-         f = new TFile("run_295977_expressphysics.root");
+         f = new TFile("/afs/cern.ch/user/d/dmf/private/eos/cms/store/user/dmf/LxBatchOut/CTPPSTimingAnalyzer/run_expressphysics_296173.root");
       }
-      TDirectory * dir = (TDirectory*)f->Get("run_295977_expressphysics.root:/Skimmer");
+      TDirectory * dir = (TDirectory*)f->Get("/afs/cern.ch/user/d/dmf/private/eos/cms/store/user/dmf/LxBatchOut/CTPPSTimingAnalyzer/run_expressphysics_296173.root:/SkimmerReco");
       dir->GetObject("CTPPSSkimmerDiamond",tree);
 
    }

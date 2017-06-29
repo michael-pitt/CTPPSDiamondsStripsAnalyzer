@@ -10,4 +10,4 @@ cd -
 env
 
 cmsRun /afs/cern.ch/user/d/dmf/private/work/private/PPSDAQ/TimingDataAnalysis/CMSSW_9_2_0_patch2/src/CTPPSDiamondAnalyzer/Skimmer/test/RunSkimmer.py
-cp output.root /afs/cern.ch/user/d/dmf/private/work/private/PPSDAQ/TimingDataAnalysis/CMSSW_9_2_0_patch2/src/CTPPSDiamondAnalyzer/Skimmer/test/output.root
+cp output_all.root /afs/cern.ch/user/d/dmf/private/work/private/PPSDAQ/TimingDataAnalysis/CMSSW_9_2_0_patch2/src/CTPPSDiamondAnalyzer/Skimmer/test/output_all.root

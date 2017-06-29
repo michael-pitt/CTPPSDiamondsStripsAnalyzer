@@ -1,5 +1,5 @@
-#ifndef CTPPSDiamondAnalyzer_CTPPSSkimmer_h
-#define CTPPSDiamondAnalyzer_CTPPSSkimmer_h
+#ifndef CTPPSDiamondAnalyzer_CTPPSRecoSkimmer_h
+#define CTPPSDiamondAnalyzer_CTPPSRecoSkimmer_h
 
 // System Inputs
 #include <fstream>
@@ -62,10 +62,10 @@
 // constructor "usesResource("TFileService");"
 // This will improve performance in multithreaded jobs.
 
-class CTPPSSkimmer : public edm::one::EDAnalyzer<edm::one::SharedResources>  {
+class CTPPSRecoSkimmer : public edm::one::EDAnalyzer<edm::one::SharedResources>  {
   public:
-    explicit CTPPSSkimmer(const edm::ParameterSet&);
-    ~CTPPSSkimmer();
+    explicit CTPPSRecoSkimmer(const edm::ParameterSet&);
+    ~CTPPSRecoSkimmer();
     static void fillDescriptions(edm::ConfigurationDescriptions& descriptions);
 
 
@@ -108,9 +108,9 @@ class CTPPSSkimmer : public edm::one::EDAnalyzer<edm::one::SharedResources>  {
     int lumi_section;
     int orbit;
 
-};
+    TTree* tree_;
+    TH1F *hltTriggerPassHisto_,*hltTriggerNamesHisto_;
 
-TTree* tree_;
-TH1F *hltTriggerPassHisto_,*hltTriggerNamesHisto_;
+};
 
 #endif

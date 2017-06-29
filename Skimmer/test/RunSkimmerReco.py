@@ -16,12 +16,10 @@ process.maxEvents = cms.untracked.PSet( input = cms.untracked.int32(-1) )
 #########################
 #      Input files      #
 #########################
-#from CTPPSDiamondAnalyzer.Skimmer.Run295977_cff import fileNames
-#from CTPPSDiamondAnalyzer.Skimmer.Run296867_cff import fileNames
-from CTPPSDiamondAnalyzer.Skimmer.Run296173_cff import readFiles
-#from CTPPSDiamondAnalyzer.Skimmer.Run296786_cff import readFiles
-#from CTPPSDiamondAnalyzer.Skimmer.Run297219_cff import readFiles
-#process.source = cms.Source ("PoolSource",fileNames = cms.untracked.vstring(fileNames))
+#from CTPPSDiamondAnalyzer.Skimmer.RunsLowPU_cff import fileNames
+#process.source = cms.Source("PoolSource",fileNames = cms.untracked.vstring(fileNames))
+
+from CTPPSDiamondAnalyzer.Skimmer.Run297219_cff import readFiles
 process.source = cms.Source ("PoolSource",fileNames = cms.untracked.vstring(readFiles))
 
 #########################
@@ -48,20 +46,7 @@ process.load("TrackingTools.TransientTrack.TransientTrackBuilder_cfi")
 ######################
 #      Analyzer      #
 ######################
-process.SkimmerDigi = cms.EDAnalyzer("CTPPSDigiSkimmer",
-    tagStatus = cms.InputTag("ctppsDiamondRawToDigi", "TimingDiamond"),
-    tagDigi = cms.InputTag("ctppsDiamondRawToDigi", "TimingDiamond"),
-    tagFEDInfo = cms.InputTag("ctppsDiamondRawToDigi", "TimingDiamond"),
-    tagDiamondRecHits = cms.InputTag("ctppsDiamondRecHits"),
-    tagDiamondLocalTracks = cms.InputTag("ctppsDiamondLocalTracks"),
-    tagLocalTrack = cms.InputTag("totemRPLocalTrackFitter"),
-    verbosity = cms.untracked.uint32(10),
-    HLTMenuLabel = cms.string('HLT'),
-    TriggersList = process.hltFilter.HLTPaths,
-    TriggerResults = cms.InputTag('TriggerResults', '', 'HLT'),
-)
-
-process.SkimmerReco = cms.EDAnalyzer("CTPPSRecoSkimmer",
+process.Skimmer = cms.EDAnalyzer("CTPPSSkimmer",
     tagStatus = cms.InputTag("ctppsDiamondRawToDigi", "TimingDiamond"),
     tagDigi = cms.InputTag("ctppsDiamondRawToDigi", "TimingDiamond"),
     tagFEDInfo = cms.InputTag("ctppsDiamondRawToDigi", "TimingDiamond"),
@@ -78,12 +63,11 @@ process.SkimmerReco = cms.EDAnalyzer("CTPPSRecoSkimmer",
 #      TFile         #
 ######################
 process.TFileService = cms.Service('TFileService',
-    fileName = cms.string('output_all.root'),
+    fileName = cms.string('output.root'),
     closeFileFast = cms.untracked.bool(True)
 )
 
 process.p = cms.Path(
     process.hltFilter*
-    process.SkimmerDigi*
-    process.SkimmerReco
+    process.Skimmer 
     )
