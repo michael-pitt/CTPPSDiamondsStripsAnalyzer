@@ -12,6 +12,7 @@
 #include "TFile.h"
 #include "TH1F.h"
 #include "TMath.h"
+#include "TLegend.h"
 
 #include <TH2.h>
 #include <TFile.h>
@@ -39,6 +40,7 @@ vector<TH1I*> hVector_h_cms_bx;
 vector<vector<vector<vector<TH1D*> > > >hVector_h_ch_getLeading;
 vector<vector<vector<vector<TH1D*> > > >hVector_h_ch_getTrailing;
 vector<vector<vector<vector<TH1D*> > > >hVector_h_ch_check;
+vector<vector<vector<vector<TH1D*> > > >hVector_h_ch_deltat;
 vector<vector<vector<TH1D*> > > hVector_h_pl_getLeading;
 vector<vector<vector<TH1D*> > > hVector_h_pl_getTrailing;
 vector<vector<vector<TH1D*> > > hVector_h_pl_check;
@@ -67,6 +69,7 @@ void CTPPSSkimmerDigiAnalyzer::CreateHistos(){
     vector< vector<TH1D*> > vec_cut_pl_getTrailing;
     vector<TH1D*> vec_cut_arm_getTrailing;
 
+    vector < vector< vector<TH1D*> > > vec_cut_ch_deltat;
     vector < vector< vector<TH1D*> > > vec_cut_ch_check;
     vector< vector<TH1D*> > vec_cut_pl_check;
     vector<TH1D*> vec_cut_arm_check;
@@ -84,6 +87,7 @@ void CTPPSSkimmerDigiAnalyzer::CreateHistos(){
       vector< vector<TH1D*> > vec_arm_per_ch_getTrailing;
       vector<TH1D*> vec_arm_per_pl_getTrailing;
 
+      vector< vector<TH1D*> > vec_arm_per_ch_deltat;
       vector< vector<TH1D*> > vec_arm_per_ch_check;
       vector<TH1D*> vec_arm_per_pl_check;
       vector<TH1D*> vec_arm_per_pl_result_leading;
@@ -93,6 +97,7 @@ void CTPPSSkimmerDigiAnalyzer::CreateHistos(){
 	vector<TH1D*> vec_ch_getLeading;
 	vector<TH1D*> vec_ch_getTrailing;
 	vector<TH1D*> vec_ch_check;
+	vector<TH1D*> vec_ch_deltat;
 	for (UInt_t ch_i = 0; ch_i < CTPPS_DIAMOND_NUM_OF_CHANNELS; ++ch_i){
 	  sprintf(name,"getLeading_arm%i_pl%i_ch%i_%s", arm_i, pl_i, ch_i, Folders.at(i).c_str());
 	  TH1D *histo_ch_getLeading = new TH1D(name,";[ns]; N events",1250,0,125);
@@ -105,10 +110,16 @@ void CTPPSSkimmerDigiAnalyzer::CreateHistos(){
 	  sprintf(name,"check_arm%i_pl%i_ch%i_%s", arm_i, pl_i, ch_i, Folders.at(i).c_str());
 	  TH1D *histo_ch_check = new TH1D(name,"; ; N events",16,0,16);
 	  vec_ch_check.push_back(histo_ch_check);
+
+	  sprintf(name,"deltat_arm%i_pl%i_ch%i_%s", arm_i, pl_i, ch_i, Folders.at(i).c_str());
+	  TH1D *histo_ch_deltat = new TH1D(name,"; [ns]; N events",100,-50.,50.);
+	  vec_ch_deltat.push_back(histo_ch_deltat);
+
 	}
 	vec_arm_per_ch_getLeading.push_back(vec_ch_getLeading);
 	vec_arm_per_ch_getTrailing.push_back(vec_ch_getTrailing);
 	vec_arm_per_ch_check.push_back(vec_ch_check);
+	vec_arm_per_ch_deltat.push_back(vec_ch_deltat);
 
 	sprintf(name,"getLeading_arm%i_pl%i_%s", arm_i, pl_i, Folders.at(i).c_str());
 	TH1D *histo_pl_getLeading = new TH1D(name,";[ns]; N events",1250,0,125);
@@ -155,6 +166,8 @@ void CTPPSSkimmerDigiAnalyzer::CreateHistos(){
       vec_cut_pl_check.push_back( vec_arm_per_pl_check);
       vec_cut_arm_check.push_back(histo_arm_check);
 
+      vec_cut_ch_deltat.push_back( vec_arm_per_ch_deltat);
+
     }
     hVector_h_ch_getLeading.push_back( vec_cut_ch_getLeading );
     hVector_h_pl_getLeading.push_back( vec_cut_pl_getLeading );
@@ -166,6 +179,7 @@ void CTPPSSkimmerDigiAnalyzer::CreateHistos(){
     hVector_h_pl_getTrailing.push_back( vec_cut_pl_getTrailing );
     hVector_h_arm_getTrailing.push_back( vec_cut_arm_getTrailing );
 
+    hVector_h_ch_deltat.push_back( vec_cut_ch_deltat );
     hVector_h_ch_check.push_back( vec_cut_ch_check );
     hVector_h_pl_check.push_back( vec_cut_pl_check );
     hVector_h_arm_check.push_back( vec_cut_arm_check );
@@ -200,13 +214,13 @@ void CTPPSSkimmerDigiAnalyzer::Loop(){
 
     bool isolatedBx = false;
     for (UInt_t j = 0; j < getBx->size(); ++j) {
-      if(getBx->at(j)==7 || getBx->at(j)==47 || getBx->at(j)==87) isolatedBx = true;
-      //if(getBx->at(j)==1) isolatedBx = true;
+      //if(getBx->at(j)==7 || getBx->at(j)==47 || getBx->at(j)==87) isolatedBx = true;
+        if(getBx->at(j)==1) isolatedBx = true;
     }
 
     bool isolatedBxCMS = false;
-    if(getBxCMS == 7 || getBxCMS == 47 || getBxCMS==87) isolatedBxCMS = true;
-    //if(getBxCMS == 1) isolatedBxCMS = true;
+    //if(getBxCMS == 7 || getBxCMS == 47 || getBxCMS==87) isolatedBxCMS = true;
+    if(getBxCMS == 1) isolatedBxCMS = true;
 
     FillHistos(0); 
     if(isolatedBxCMS){
@@ -238,6 +252,8 @@ void CTPPSSkimmerDigiAnalyzer::FillHistos(int i){
       hVector_h_ch_getTrailing[i].at(arm->at(j)).at(plane->at(j)).at(channel->at(j))->Fill(getTrailing->at(j)*HPTDC_BIN_WIDTH_NS);
       hVector_h_pl_getTrailing[i].at(arm->at(j)).at(plane->at(j))->Fill(getTrailing->at(j)*HPTDC_BIN_WIDTH_NS);
       hVector_h_arm_getTrailing[i].at(arm->at(j))->Fill(getTrailing->at(j)*HPTDC_BIN_WIDTH_NS);
+
+      hVector_h_ch_deltat[i].at(arm->at(j)).at(plane->at(j)).at(channel->at(j))->Fill((getLeading->at(j)-getTrailing->at(j))*HPTDC_BIN_WIDTH_NS);
 
       if(getLeading->at(j) != 0 && getTrailing->at(j) != 0){
 	hVector_h_ch_check[i].at(arm->at(j)).at(plane->at(j)).at(channel->at(j))->Fill("Both",1);
@@ -276,22 +292,23 @@ void CTPPSSkimmerDigiAnalyzer::WriteHistos(){
   bool save_picture = true;
   TCanvas *c1 = new TCanvas("Calibration","",200,10,600,400);
 
-  TFile* f = new TFile("histo_run295977.root", "RECREATE");
+  TFile* f = new TFile("histo_run296173.root", "RECREATE");
 
   for (std::vector<std::string>::size_type i=0; i<Folders.size(); i++){
 
-    gSystem->mkdir(Form("/afs/cern.ch/work/d/dmf/public/html/TimingCalibration/Run295977/%s/", Folders.at(i).c_str()));
-    gSystem->mkdir(Form("/afs/cern.ch/work/d/dmf/public/html/TimingCalibration/Run295977/%s/getLeading", Folders.at(i).c_str()));
-    gSystem->mkdir(Form("/afs/cern.ch/work/d/dmf/public/html/TimingCalibration/Run295977/%s/getTrailing", Folders.at(i).c_str()));
-    gSystem->mkdir(Form("/afs/cern.ch/work/d/dmf/public/html/TimingCalibration/Run295977/%s/together", Folders.at(i).c_str()));
-    gSystem->mkdir(Form("/afs/cern.ch/work/d/dmf/public/html/TimingCalibration/Run295977/%s/check", Folders.at(i).c_str()));
-    gSystem->mkdir(Form("/afs/cern.ch/work/d/dmf/public/html/TimingCalibration/Run295977/%s/result", Folders.at(i).c_str()));
+    gSystem->mkdir(Form("/afs/cern.ch/work/d/dmf/public/html/TimingCalibration/Run296173/%s/", Folders.at(i).c_str()));
+    gSystem->mkdir(Form("/afs/cern.ch/work/d/dmf/public/html/TimingCalibration/Run296173/%s/getLeading", Folders.at(i).c_str()));
+    gSystem->mkdir(Form("/afs/cern.ch/work/d/dmf/public/html/TimingCalibration/Run296173/%s/getTrailing", Folders.at(i).c_str()));
+    gSystem->mkdir(Form("/afs/cern.ch/work/d/dmf/public/html/TimingCalibration/Run296173/%s/together", Folders.at(i).c_str()));
+    gSystem->mkdir(Form("/afs/cern.ch/work/d/dmf/public/html/TimingCalibration/Run296173/%s/check", Folders.at(i).c_str()));
+    gSystem->mkdir(Form("/afs/cern.ch/work/d/dmf/public/html/TimingCalibration/Run296173/%s/result", Folders.at(i).c_str()));
+    gSystem->mkdir(Form("/afs/cern.ch/work/d/dmf/public/html/TimingCalibration/Run296173/%s/deltat", Folders.at(i).c_str()));
 
     hVector_h_cms_bx[i]->Write();
 
     if(save_picture){
       hVector_h_cms_bx[i]->Draw();
-      c1->SaveAs(Form("/afs/cern.ch/work/d/dmf/public/html/TimingCalibration/Run295977/%s/%s.png", Folders.at(i).c_str(), hVector_h_cms_bx[i]->GetName()));
+      c1->SaveAs(Form("/afs/cern.ch/work/d/dmf/public/html/TimingCalibration/Run296173/%s/%s.png", Folders.at(i).c_str(), hVector_h_cms_bx[i]->GetName()));
       c1->Modified();
       c1->Update();
     }
@@ -302,17 +319,17 @@ void CTPPSSkimmerDigiAnalyzer::WriteHistos(){
 
       if(save_picture){
 	hVector_h_arm_getLeading[i].at(arm_i)->Draw();
-	c1->SaveAs(Form("/afs/cern.ch/work/d/dmf/public/html/TimingCalibration/Run295977/%s/getLeading/%s.png", Folders.at(i).c_str(), hVector_h_arm_getLeading[i].at(arm_i)->GetName()));
+	c1->SaveAs(Form("/afs/cern.ch/work/d/dmf/public/html/TimingCalibration/Run296173/%s/getLeading/%s.png", Folders.at(i).c_str(), hVector_h_arm_getLeading[i].at(arm_i)->GetName()));
 	c1->Modified();
 	c1->Update();
 
 	hVector_h_arm_getTrailing[i].at(arm_i)->Draw();
-	c1->SaveAs(Form("/afs/cern.ch/work/d/dmf/public/html/TimingCalibration/Run295977/%s/getTrailing/%s.png", Folders.at(i).c_str(), hVector_h_arm_getTrailing[i].at(arm_i)->GetName()));
+	c1->SaveAs(Form("/afs/cern.ch/work/d/dmf/public/html/TimingCalibration/Run296173/%s/getTrailing/%s.png", Folders.at(i).c_str(), hVector_h_arm_getTrailing[i].at(arm_i)->GetName()));
 	c1->Modified();
 	c1->Update();
 
 	hVector_h_arm_check[i].at(arm_i)->Draw();
-	c1->SaveAs(Form("/afs/cern.ch/work/d/dmf/public/html/TimingCalibration/Run295977/%s/check/%s.png", Folders.at(i).c_str(), hVector_h_arm_check[i].at(arm_i)->GetName()));
+	c1->SaveAs(Form("/afs/cern.ch/work/d/dmf/public/html/TimingCalibration/Run296173/%s/check/%s.png", Folders.at(i).c_str(), hVector_h_arm_check[i].at(arm_i)->GetName()));
 	c1->Modified();
 	c1->Update();
 
@@ -324,17 +341,17 @@ void CTPPSSkimmerDigiAnalyzer::WriteHistos(){
 
 	if(save_picture){
 	  hVector_h_pl_getLeading[i].at(arm_i).at(pl_i)->Draw();
-	  c1->SaveAs(Form("/afs/cern.ch/work/d/dmf/public/html/TimingCalibration/Run295977/%s/getLeading/%s.png", Folders.at(i).c_str(),hVector_h_pl_getLeading[i].at(arm_i).at(pl_i)->GetName()));
+	  c1->SaveAs(Form("/afs/cern.ch/work/d/dmf/public/html/TimingCalibration/Run296173/%s/getLeading/%s.png", Folders.at(i).c_str(),hVector_h_pl_getLeading[i].at(arm_i).at(pl_i)->GetName()));
 	  c1->Modified();
 	  c1->Update();
 
 	  hVector_h_pl_getTrailing[i].at(arm_i).at(pl_i)->Draw();
-	  c1->SaveAs(Form("/afs/cern.ch/work/d/dmf/public/html/TimingCalibration/Run295977/%s/getTrailing/%s.png", Folders.at(i).c_str(),hVector_h_pl_getTrailing[i].at(arm_i).at(pl_i)->GetName()));
+	  c1->SaveAs(Form("/afs/cern.ch/work/d/dmf/public/html/TimingCalibration/Run296173/%s/getTrailing/%s.png", Folders.at(i).c_str(),hVector_h_pl_getTrailing[i].at(arm_i).at(pl_i)->GetName()));
 	  c1->Modified();
 	  c1->Update();
 
 	  hVector_h_pl_check[i].at(arm_i).at(pl_i)->Draw();
-	  c1->SaveAs(Form("/afs/cern.ch/work/d/dmf/public/html/TimingCalibration/Run295977/%s/check/%s.png", Folders.at(i).c_str(),hVector_h_pl_check[i].at(arm_i).at(pl_i)->GetName()));
+	  c1->SaveAs(Form("/afs/cern.ch/work/d/dmf/public/html/TimingCalibration/Run296173/%s/check/%s.png", Folders.at(i).c_str(),hVector_h_pl_check[i].at(arm_i).at(pl_i)->GetName()));
 	  c1->Modified();
 	  c1->Update();
 
@@ -344,22 +361,33 @@ void CTPPSSkimmerDigiAnalyzer::WriteHistos(){
 
 	  hVector_h_ch_getLeading[i].at(arm_i).at(pl_i).at(ch_i)->Write();
 	  hVector_h_ch_getTrailing[i].at(arm_i).at(pl_i).at(ch_i)->Write();
+	  hVector_h_ch_deltat[i].at(arm_i).at(pl_i).at(ch_i)->Write();
 
 	  if(save_picture){
+	    TLegend* leg = new TLegend(0.7597956,0.822335,0.9931857,0.9949239,NULL,"brNDC");
+	    leg->SetFillColor(kWhite);
+	    leg->SetLineColor(kWhite);
+	    leg->AddEntry(hVector_h_ch_getLeading[i].at(arm_i).at(pl_i).at(ch_i),"Leading Edge","LF");
+	    leg->AddEntry(hVector_h_ch_getTrailing[i].at(arm_i).at(pl_i).at(ch_i),"Trailing Edge","LF");
+	    hVector_h_ch_getLeading[i].at(arm_i).at(pl_i).at(ch_i)->SetStats(0);
 	    hVector_h_ch_getLeading[i].at(arm_i).at(pl_i).at(ch_i)->SetFillColor(kBlack);
 	    hVector_h_ch_getLeading[i].at(arm_i).at(pl_i).at(ch_i)->SetLineColor(kBlack);
 	    hVector_h_ch_getLeading[i].at(arm_i).at(pl_i).at(ch_i)->SetLineWidth(1.);
 	    hVector_h_ch_getLeading[i].at(arm_i).at(pl_i).at(ch_i)->Draw();
+	    hVector_h_ch_getTrailing[i].at(arm_i).at(pl_i).at(ch_i)->SetStats(0);
 	    hVector_h_ch_getTrailing[i].at(arm_i).at(pl_i).at(ch_i)->SetFillColor(kOrange);
 	    hVector_h_ch_getTrailing[i].at(arm_i).at(pl_i).at(ch_i)->SetLineColor(kOrange);
 	    hVector_h_ch_getTrailing[i].at(arm_i).at(pl_i).at(ch_i)->SetLineWidth(1.);
+	    leg->Draw();
 	    hVector_h_ch_getTrailing[i].at(arm_i).at(pl_i).at(ch_i)->Draw("SAME");
-	    c1->SaveAs(Form("/afs/cern.ch/work/d/dmf/public/html/TimingCalibration/Run295977/%s/together/LeadingAndTrailing_arm%i_pl%i_ch%i.png", Folders.at(i).c_str(), arm_i, pl_i, ch_i));
+	    c1->SaveAs(Form("/afs/cern.ch/work/d/dmf/public/html/TimingCalibration/Run296173/%s/together/LeadingAndTrailing_arm%i_pl%i_ch%i.png", Folders.at(i).c_str(), arm_i, pl_i, ch_i));
 	    c1->Modified();
 	    c1->Update();
+	    delete leg;
 	  }
 
 	  if(hVector_h_ch_getLeading[i].at(arm_i).at(pl_i).at(ch_i)->GetEntries()>0){  
+	    hVector_h_ch_getLeading[i].at(arm_i).at(pl_i).at(ch_i)->SetStats(111111);
 	    double max_x = hVector_h_ch_getLeading[i].at(arm_i).at(pl_i).at(ch_i)->GetXaxis()->GetBinCenter(hVector_h_ch_getLeading[i].at(arm_i).at(pl_i).at(ch_i)->GetMaximumBin());
 	    hVector_h_ch_getLeading[i].at(arm_i).at(pl_i).at(ch_i)->Fit("gaus","","",max_x-0.02*max_x,max_x+0.02*max_x);
 	    int migrad = getFitStatus((char *)gMinuit->fCstatu.Data())  ;
@@ -376,6 +404,7 @@ void CTPPSSkimmerDigiAnalyzer::WriteHistos(){
 	  }
 
 	  if(hVector_h_ch_getTrailing[i].at(arm_i).at(pl_i).at(ch_i)->GetEntries()>0){
+	    hVector_h_ch_getTrailing[i].at(arm_i).at(pl_i).at(ch_i)->SetStats(111111);
 	    double max_x = hVector_h_ch_getTrailing[i].at(arm_i).at(pl_i).at(ch_i)->GetXaxis()->GetBinCenter(hVector_h_ch_getTrailing[i].at(arm_i).at(pl_i).at(ch_i)->GetMaximumBin());
 	    hVector_h_ch_getTrailing[i].at(arm_i).at(pl_i).at(ch_i)->Fit("gaus","","",max_x-0.02*max_x,max_x+0.02*max_x);
 	    int migrad = getFitStatus((char *)gMinuit->fCstatu.Data())  ;
@@ -391,19 +420,29 @@ void CTPPSSkimmerDigiAnalyzer::WriteHistos(){
 	    }
 	  }
 
+	  if( hVector_h_ch_deltat[i].at(arm_i).at(pl_i).at(ch_i)->GetEntries()>0){
+	    double max_x =  hVector_h_ch_deltat[i].at(arm_i).at(pl_i).at(ch_i)->GetXaxis()->GetBinCenter( hVector_h_ch_deltat[i].at(arm_i).at(pl_i).at(ch_i)->GetMaximumBin());
+	    hVector_h_ch_deltat[i].at(arm_i).at(pl_i).at(ch_i)->Fit("gaus","","",max_x-0.02*max_x,max_x+0.02*max_x);
+	  }
+
 	  if(save_picture){
 	    hVector_h_ch_getLeading[i].at(arm_i).at(pl_i).at(ch_i)->Draw();
-	    c1->SaveAs(Form("/afs/cern.ch/work/d/dmf/public/html/TimingCalibration/Run295977/%s/getLeading/%s.png",Folders.at(i).c_str(), hVector_h_ch_getLeading[i].at(arm_i).at(pl_i).at(ch_i)->GetName()));
+	    c1->SaveAs(Form("/afs/cern.ch/work/d/dmf/public/html/TimingCalibration/Run296173/%s/getLeading/%s.png",Folders.at(i).c_str(), hVector_h_ch_getLeading[i].at(arm_i).at(pl_i).at(ch_i)->GetName()));
 	    c1->Modified();
 	    c1->Update();
 
 	    hVector_h_ch_getTrailing[i].at(arm_i).at(pl_i).at(ch_i)->Draw();
-	    c1->SaveAs(Form("/afs/cern.ch/work/d/dmf/public/html/TimingCalibration/Run295977/%s/getTrailing/%s.png",Folders.at(i).c_str(), hVector_h_ch_getTrailing[i].at(arm_i).at(pl_i).at(ch_i)->GetName()));
+	    c1->SaveAs(Form("/afs/cern.ch/work/d/dmf/public/html/TimingCalibration/Run296173/%s/getTrailing/%s.png",Folders.at(i).c_str(), hVector_h_ch_getTrailing[i].at(arm_i).at(pl_i).at(ch_i)->GetName()));
 	    c1->Modified();
 	    c1->Update();
 
 	    hVector_h_ch_check[i].at(arm_i).at(pl_i).at(ch_i)->Draw();
-	    c1->SaveAs(Form("/afs/cern.ch/work/d/dmf/public/html/TimingCalibration/Run295977/%s/check/%s.png",Folders.at(i).c_str(), hVector_h_ch_check[i].at(arm_i).at(pl_i).at(ch_i)->GetName()));
+	    c1->SaveAs(Form("/afs/cern.ch/work/d/dmf/public/html/TimingCalibration/Run296173/%s/check/%s.png",Folders.at(i).c_str(), hVector_h_ch_check[i].at(arm_i).at(pl_i).at(ch_i)->GetName()));
+	    c1->Modified();
+	    c1->Update();
+
+	    hVector_h_ch_deltat[i].at(arm_i).at(pl_i).at(ch_i)->Draw();
+	    c1->SaveAs(Form("/afs/cern.ch/work/d/dmf/public/html/TimingCalibration/Run296173/%s/deltat/%s.png",Folders.at(i).c_str(), hVector_h_ch_deltat[i].at(arm_i).at(pl_i).at(ch_i)->GetName()));
 	    c1->Modified();
 	    c1->Update();
 
@@ -413,23 +452,30 @@ void CTPPSSkimmerDigiAnalyzer::WriteHistos(){
 	hVector_h_pl_result_leading[i].at(arm_i).at(pl_i)->Write();
 
 	if(save_picture){
-          hVector_h_pl_result_leading[i].at(arm_i).at(pl_i)->GetYaxis()->SetRangeUser(0.,200.);
+	  TLegend* leg = new TLegend(0.7597956,0.822335,0.9931857,0.9949239,NULL,"brNDC");
+	  leg->SetFillColor(kWhite);
+	  leg->SetLineColor(kWhite);
+	  leg->AddEntry(hVector_h_pl_result_leading[i].at(arm_i).at(pl_i),"Leading Edge","LF");
+	  leg->AddEntry(hVector_h_pl_result_trailing[i].at(arm_i).at(pl_i),"Trailing Edge","LF");
+	  hVector_h_pl_result_leading[i].at(arm_i).at(pl_i)->GetYaxis()->SetRangeUser(0.,200.);
 	  hVector_h_pl_result_leading[i].at(arm_i).at(pl_i)->SetStats(0);
 	  hVector_h_pl_result_leading[i].at(arm_i).at(pl_i)->SetLineColor(kBlack);
 	  hVector_h_pl_result_leading[i].at(arm_i).at(pl_i)->SetMarkerColor(kBlack);
 	  hVector_h_pl_result_leading[i].at(arm_i).at(pl_i)->SetMarkerSize(2);
 	  hVector_h_pl_result_leading[i].at(arm_i).at(pl_i)->SetMarkerStyle(2);
-	  hVector_h_pl_result_leading[i].at(arm_i).at(pl_i)->Draw("EP");
-          hVector_h_pl_result_trailing[i].at(arm_i).at(pl_i)->GetYaxis()->SetRangeUser(0.,200.);
+	  hVector_h_pl_result_leading[i].at(arm_i).at(pl_i)->Draw("E1P");
+	  hVector_h_pl_result_trailing[i].at(arm_i).at(pl_i)->GetYaxis()->SetRangeUser(0.,200.);
 	  hVector_h_pl_result_trailing[i].at(arm_i).at(pl_i)->SetStats(0);
 	  hVector_h_pl_result_trailing[i].at(arm_i).at(pl_i)->SetLineColor(kOrange);
 	  hVector_h_pl_result_trailing[i].at(arm_i).at(pl_i)->SetMarkerColor(kOrange);
 	  hVector_h_pl_result_trailing[i].at(arm_i).at(pl_i)->SetMarkerSize(2);
 	  hVector_h_pl_result_trailing[i].at(arm_i).at(pl_i)->SetMarkerStyle(2);
-	  hVector_h_pl_result_trailing[i].at(arm_i).at(pl_i)->Draw("EPSAME");
-	  c1->SaveAs(Form("/afs/cern.ch/work/d/dmf/public/html/TimingCalibration/Run295977/%s/result/fit_results_arm%i_pl_%i.png",Folders.at(i).c_str(), arm_i, pl_i));
+	  hVector_h_pl_result_trailing[i].at(arm_i).at(pl_i)->Draw("ESAMEEX0");
+	  leg->Draw();
+	  c1->SaveAs(Form("/afs/cern.ch/work/d/dmf/public/html/TimingCalibration/Run296173/%s/result/fit_results_arm%i_pl_%i.png",Folders.at(i).c_str(), arm_i, pl_i));
 	  c1->Modified();
 	  c1->Update();
+	  delete leg;
 	}
 
       }    
