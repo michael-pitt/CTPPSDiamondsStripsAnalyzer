@@ -46,7 +46,7 @@ process.load("TrackingTools.TransientTrack.TransientTrackBuilder_cfi")
 ######################
 #      Analyzer      #
 ######################
-process.Skimmer = cms.EDAnalyzer("CTPPSSkimmer",
+process.Skimmer = cms.EDAnalyzer("CTPPSRecoSkimmer",
     tagStatus = cms.InputTag("ctppsDiamondRawToDigi", "TimingDiamond"),
     tagDigi = cms.InputTag("ctppsDiamondRawToDigi", "TimingDiamond"),
     tagFEDInfo = cms.InputTag("ctppsDiamondRawToDigi", "TimingDiamond"),
