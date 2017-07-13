@@ -1,5 +1,6 @@
-INSTALLATION:
+<b>Installation:</b>
 
+```
 cmsrel CMSSW_9_2_6
 cd CMSSW_9_2_6/src
 cmsenv
@@ -11,6 +12,10 @@ cd CondFormats/CTPPSReadoutObjects/xml
 wget https://raw.githubusercontent.com/CTPPS/cmssw/diamond_mapping2017_checkedTS1/CondFormats/CTPPSReadoutObjects/xml/mapping_timing_diamond_2017.xml
 git clone https://github.com/dfigueiredo/CTPPSDiamondAnalyzer.git
 scram b -j 8
+```
 
-RUNNING Monitor:
+<b>Running Monitor Off-Line:</b>
+
+```
 cmsRun CTPPSDiamondAnalyzer/Skimmer/test/RunMonitor.py
+```
