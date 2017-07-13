@@ -271,11 +271,21 @@ void CTPPSSkimmerAnalyzer::WriteHistos(){
 
   for (std::vector<std::string>::size_type i=0; i<Folders.size(); i++){
 
-    gSystem->mkdir(Form("/afs/cern.ch/work/d/dmf/public/html/TimingCalibration/Run296173/%s/", Folders.at(i).c_str()));
-    gSystem->mkdir(Form("/afs/cern.ch/work/d/dmf/public/html/TimingCalibration/Run296173/%s/getT", Folders.at(i).c_str()));
-    gSystem->mkdir(Form("/afs/cern.ch/work/d/dmf/public/html/TimingCalibration/Run296173/%s/getToT", Folders.at(i).c_str()));
-    gSystem->mkdir(Form("/afs/cern.ch/work/d/dmf/public/html/TimingCalibration/Run296173/%s/check", Folders.at(i).c_str()));
-    gSystem->mkdir(Form("/afs/cern.ch/work/d/dmf/public/html/TimingCalibration/Run296173/%s/result", Folders.at(i).c_str()));
+    gSystem->mkdir("/afs/cern.ch/work/d/dmf/public/html/TimingCalibration/Run296173");
+    gSystem->CopyFile("/afs/cern.ch/work/d/dmf/public/html/TimingCalibration/index.php","/afs/cern.ch/work/d/dmf/public/html/TimingCalibration/Run296173/index.php");
+    gSystem->CopyFile("/afs/cern.ch/work/d/dmf/public/html/TimingCalibration/index.php",Form("/afs/cern.ch/work/d/dmf/public/html/TimingCalibration/Run296173/%s/index.php", Folders.at(i).c_str()));
+
+    gSystem->mkdir(Form("/afs/cern.ch/work/d/dmf/public/html/TimingCalibration/Run296176/%s/getT", Folders.at(i).c_str()));
+    gSystem->CopyFile("/afs/cern.ch/work/d/dmf/public/html/TimingCalibration/index.php",Form("/afs/cern.ch/work/d/dmf/public/html/TimingCalibration/Run296173/%s/getT/index.php", Folders.at(i).c_str()));
+
+    gSystem->mkdir(Form("/afs/cern.ch/work/d/dmf/public/html/TimingCalibration/Run296176/%s/getToT", Folders.at(i).c_str()));
+    gSystem->CopyFile("/afs/cern.ch/work/d/dmf/public/html/TimingCalibration/index.php",Form("/afs/cern.ch/work/d/dmf/public/html/TimingCalibration/Run296173/%s/getToT/index.php", Folders.at(i).c_str()));
+
+    gSystem->mkdir(Form("/afs/cern.ch/work/d/dmf/public/html/TimingCalibration/Run296176/%s/check", Folders.at(i).c_str()));
+    gSystem->CopyFile("/afs/cern.ch/work/d/dmf/public/html/TimingCalibration/index.php",Form("/afs/cern.ch/work/d/dmf/public/html/TimingCalibration/Run296173/%s/check/index.php", Folders.at(i).c_str()));
+
+    gSystem->mkdir(Form("/afs/cern.ch/work/d/dmf/public/html/TimingCalibration/Run296176/%s/result", Folders.at(i).c_str()));
+    gSystem->CopyFile("/afs/cern.ch/work/d/dmf/public/html/TimingCalibration/index.php",Form("/afs/cern.ch/work/d/dmf/public/html/TimingCalibration/Run296173/%s/result/index.php", Folders.at(i).c_str()));
 
     hVector_h_cms_bx[i]->Write();
 

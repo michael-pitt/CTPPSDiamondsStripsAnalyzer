@@ -124,10 +124,11 @@ CTPPSRecoSkimmer::analyze(const edm::Event& iEvent, const edm::EventSetup& iSetu
   getBX_vec.clear();
   hltTrigResults_.clear();
   bx_cms = -1;
+  run_number = -1;
   lumi_section = -1;
   orbit = -1;
 
-  fillTriggerInfo(iEvent,iSetup);
+  //fillTriggerInfo(iEvent,iSetup);
 
   edm::Handle< edm::DetSetVector<TotemVFATStatus> > diamondVFATStatus;
   iEvent.getByToken( tokenStatus_, diamondVFATStatus );
@@ -156,6 +157,7 @@ CTPPSRecoSkimmer::analyze(const edm::Event& iEvent, const edm::EventSetup& iSetu
   bx_cms = iEvent.bunchCrossing();
   lumi_section = iEvent.luminosityBlock();
   orbit = iEvent.orbitNumber();
+  run_number = iEvent.id().run();
 
   for ( const auto& rechits : *diamondRecHits ) {
     const CTPPSDiamondDetId detId( rechits.detId() );
@@ -223,6 +225,7 @@ CTPPSRecoSkimmer::beginJob()
   fs->cd();
 
   tree_->Branch("valid", &valid, "valid/B");
+  tree_->Branch("run_number", &run_number, "run_number/I");
   tree_->Branch("getBxCMS", &bx_cms, "bx_cms/I");
   tree_->Branch("getOrbitCMS", &orbit, "orbit/I");
   tree_->Branch("getLsCMS", &lumi_section, "lumi_section/I");

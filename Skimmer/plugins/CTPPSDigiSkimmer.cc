@@ -122,8 +122,9 @@ CTPPSDigiSkimmer::analyze(const edm::Event& iEvent, const edm::EventSetup& iSetu
   bx_cms = -1;
   lumi_section = -1;
   orbit = -1;
+  run_number = -1;
 
-  fillTriggerInfo(iEvent,iSetup);
+  //fillTriggerInfo(iEvent,iSetup);
 
   edm::Handle< edm::DetSetVector<TotemVFATStatus> > diamondVFATStatus;
   iEvent.getByToken( tokenStatus_, diamondVFATStatus );
@@ -152,6 +153,7 @@ CTPPSDigiSkimmer::analyze(const edm::Event& iEvent, const edm::EventSetup& iSetu
   bx_cms = iEvent.bunchCrossing();
   lumi_section = iEvent.luminosityBlock();
   orbit = iEvent.orbitNumber();
+  run_number = iEvent.id().run();
 
   for ( const auto& digis : *diamondDigis ) {
     const CTPPSDiamondDetId detId( digis.detId() );
@@ -217,6 +219,7 @@ CTPPSDigiSkimmer::beginJob()
   fs->cd();
 
   tree_->Branch("valid", &valid, "valid/B");
+  tree_->Branch("run_number", &run_number, "run_number/I");
   tree_->Branch("getBxCMS", &bx_cms, "bx_cms/I");
   tree_->Branch("getOrbitCMS", &orbit, "orbit/I");
   tree_->Branch("getLsCMS", &lumi_section, "lumi_section/I");

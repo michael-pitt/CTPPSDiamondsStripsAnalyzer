@@ -18,11 +18,18 @@ process.maxEvents = cms.untracked.PSet( input = cms.untracked.int32(-1) )
 #########################
 #from CTPPSDiamondAnalyzer.Skimmer.Run295977_cff import fileNames
 #from CTPPSDiamondAnalyzer.Skimmer.Run296867_cff import fileNames
-from CTPPSDiamondAnalyzer.Skimmer.Run296173_cff import readFiles
+#from CTPPSDiamondAnalyzer.Skimmer.Run296173_cff import readFiles
 #from CTPPSDiamondAnalyzer.Skimmer.Run296786_cff import readFiles
 #from CTPPSDiamondAnalyzer.Skimmer.Run297219_cff import readFiles
+#from CTPPSDiamondAnalyzer.Skimmer.Run298593_cff import readFiles
+#from CTPPSDiamondAnalyzer.Skimmer.Run298594_cff import readFiles
+#from CTPPSDiamondAnalyzer.Skimmer.Run298596_cff import readFiles
 #process.source = cms.Source ("PoolSource",fileNames = cms.untracked.vstring(fileNames))
-process.source = cms.Source ("PoolSource",fileNames = cms.untracked.vstring(readFiles))
+#process.source = cms.Source ("PoolSource",fileNames = cms.untracked.vstring(readFiles))
+
+process.source = cms.Source("PoolSource",
+    fileNames = cms.untracked.vstring( 'file:input.root')
+)
 
 #########################
 #        Triggers       #
@@ -40,7 +47,8 @@ process.load("Configuration.StandardSequences.GeometryDB_cff")
 process.load("Configuration.StandardSequences.FrontierConditions_GlobalTag_cff")
 
 from Configuration.AlCa.GlobalTag import GlobalTag
-process.GlobalTag = GlobalTag(process.GlobalTag, '92X_dataRun2_HLT_v2','')
+#process.GlobalTag = GlobalTag(process.GlobalTag, '92X_dataRun2_HLT_v2','')
+process.GlobalTag = GlobalTag(process.GlobalTag, '92X_dataRun2_Express_v2','')
 
 process.load("Configuration.StandardSequences.MagneticField_cff")
 process.load("TrackingTools.TransientTrack.TransientTrackBuilder_cfi")

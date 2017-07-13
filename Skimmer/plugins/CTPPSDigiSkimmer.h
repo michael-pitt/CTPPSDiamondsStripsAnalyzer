@@ -102,6 +102,7 @@ class CTPPSDigiSkimmer : public edm::one::EDAnalyzer<edm::one::SharedResources> 
     std::vector<short> getHPTDCError_vec;
 
     int bx_cms;
+    int run_number;
     int lumi_section;
     int orbit;
 
