@@ -31,6 +31,7 @@ CTPPSMonitor::CTPPSMonitor(const edm::ParameterSet &iConfig):
   tokenDiamondHit_  ( consumes< edm::DetSetVector<CTPPSDiamondRecHit> >    (iConfig.getParameter<edm::InputTag>( "tagDiamondRecHits" ) ) ),
   tokenDiamondTrack_( consumes< edm::DetSetVector<CTPPSDiamondLocalTrack> >(iConfig.getParameter<edm::InputTag>( "tagDiamondLocalTracks" ) ) ),
   tokenFEDInfo_     ( consumes< std::vector<TotemFEDInfo> >                (iConfig.getParameter<edm::InputTag>( "tagFEDInfo" ) ) ),
+  bx_        (iConfig.getUntrackedParameter< std::vector<int> >( "bx") ),
   verbosity_        (iConfig.getUntrackedParameter<unsigned int>( "verbosity", 0 ) ),
   path_             (iConfig.getUntrackedParameter<std::string> ( "path" ) )
 {
@@ -101,12 +102,14 @@ CTPPSMonitor::analyze(const edm::Event& iEvent, const edm::EventSetup& iSetup)
       if(digi.getLeadingEdge()==0 || digi.getTrailingEdge()==0) continue;
       if(digi.getMultipleHit()==1) continue;
 
-      hVector_h_ch_getLeading.at(detId.arm()).at(detId.plane()).at(detId.channel())->Fill(digi.getLeadingEdge()*HPTDC_BIN_WIDTH_NS);
-      hVector_h_ch_getTrailing.at(detId.arm()).at(detId.plane()).at(detId.channel())->Fill(digi.getTrailingEdge()*HPTDC_BIN_WIDTH_NS);
-      hVector_h_ch_deltat.at(detId.arm()).at(detId.plane()).at(detId.channel())->Fill((digi.getTrailingEdge()-digi.getLeadingEdge())*HPTDC_BIN_WIDTH_NS);
+      for (std::vector<std::string>::size_type i=0; i<bx_.size(); i++){
+	if(bx_cms!=bx_[i]) continue;
+	hVector_h_ch_getLeading.at(detId.arm()).at(detId.plane()).at(detId.channel())->Fill(digi.getLeadingEdge()*HPTDC_BIN_WIDTH_NS);
+	hVector_h_ch_getTrailing.at(detId.arm()).at(detId.plane()).at(detId.channel())->Fill(digi.getTrailingEdge()*HPTDC_BIN_WIDTH_NS);
+	hVector_h_ch_deltat.at(detId.arm()).at(detId.plane()).at(detId.channel())->Fill((digi.getTrailingEdge()-digi.getLeadingEdge())*HPTDC_BIN_WIDTH_NS);
+      }
 
     }
-
   }
 
 }

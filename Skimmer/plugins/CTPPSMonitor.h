@@ -85,6 +85,7 @@ class CTPPSMonitor : public edm::one::EDAnalyzer<edm::one::SharedResources>  {
     edm::EDGetTokenT< edm::DetSetVector<CTPPSDiamondRecHit> > tokenDiamondHit_;
     edm::EDGetTokenT< edm::DetSetVector<CTPPSDiamondLocalTrack> > tokenDiamondTrack_;
     edm::EDGetTokenT< std::vector<TotemFEDInfo> > tokenFEDInfo_;
+    std::vector<int> bx_;
     unsigned int verbosity_;
     std::string path_;
     bool valid;

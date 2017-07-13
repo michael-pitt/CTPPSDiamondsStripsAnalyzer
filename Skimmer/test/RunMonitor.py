@@ -66,6 +66,7 @@ process.Monitor = cms.EDAnalyzer("CTPPSMonitor",
     tagDiamondRecHits = cms.InputTag("ctppsDiamondRecHits"),
     tagDiamondLocalTracks = cms.InputTag("ctppsDiamondLocalTracks"),
     tagLocalTrack = cms.InputTag("totemRPLocalTrackFitter"),
+    bx = cms.untracked.vint32(0,1786), #empty vector: no BX selection
     verbosity = cms.untracked.uint32(0),
     path = cms.untracked.string("Run298597")
 )
