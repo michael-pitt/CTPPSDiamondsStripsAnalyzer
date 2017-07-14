@@ -33,7 +33,7 @@ In case you would like to run a single file, edit RunMonitor.py.
 cmsRun CTPPSDiamondAnalyzer/Skimmer/test/RunMonitor.py
 ```
 
-<b>Copy the Generate Plots to your privete DNS folder in lxplus:</b>
+<b>Copy the Generate Plots to your Private DNS folder in lxplus:</b>
 
 ```
 cp -r RunXXXXX /afs/cern.ch/user/public/html/. (or www)
