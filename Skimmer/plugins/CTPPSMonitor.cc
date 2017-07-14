@@ -100,10 +100,16 @@ CTPPSMonitor::analyze(const edm::Event& iEvent, const edm::EventSetup& iSetup)
 
       if(detId.channel()==30) continue;
       if(digi.getLeadingEdge()==0 || digi.getTrailingEdge()==0) continue;
-      if(digi.getMultipleHit()==1) continue;
+      if(digi.getMultipleHit()>0) continue;
 
-      for (std::vector<std::string>::size_type i=0; i<bx_.size(); i++){
-	if(bx_cms!=bx_[i]) continue;
+      if(bx_.size()>0){
+	for (std::vector<std::string>::size_type i=0; i<bx_.size(); i++){
+	  if(bx_cms!=bx_[i]) continue;
+	  hVector_h_ch_getLeading.at(detId.arm()).at(detId.plane()).at(detId.channel())->Fill(digi.getLeadingEdge()*HPTDC_BIN_WIDTH_NS);
+	  hVector_h_ch_getTrailing.at(detId.arm()).at(detId.plane()).at(detId.channel())->Fill(digi.getTrailingEdge()*HPTDC_BIN_WIDTH_NS);
+	  hVector_h_ch_deltat.at(detId.arm()).at(detId.plane()).at(detId.channel())->Fill((digi.getTrailingEdge()-digi.getLeadingEdge())*HPTDC_BIN_WIDTH_NS);
+	}
+      }else{
 	hVector_h_ch_getLeading.at(detId.arm()).at(detId.plane()).at(detId.channel())->Fill(digi.getLeadingEdge()*HPTDC_BIN_WIDTH_NS);
 	hVector_h_ch_getTrailing.at(detId.arm()).at(detId.plane()).at(detId.channel())->Fill(digi.getTrailingEdge()*HPTDC_BIN_WIDTH_NS);
 	hVector_h_ch_deltat.at(detId.arm()).at(detId.plane()).at(detId.channel())->Fill((digi.getTrailingEdge()-digi.getLeadingEdge())*HPTDC_BIN_WIDTH_NS);

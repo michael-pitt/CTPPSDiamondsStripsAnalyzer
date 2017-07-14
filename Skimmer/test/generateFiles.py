@@ -1,13 +1,14 @@
 import os
 
-file_save = open("testfile.txt",'w') 
+path_ = '/store/t0streamer/Data/PhysicsCommissioning/000/298/997/'
+file_save = open("../python/AutoGenerate_cff.py",'w') 
 
 asps = []
-print>>file_save, "readfiles=["
-for root, dirs, files in os.walk(r'/eos/cms/store/t0streamer/Data/Physics/000/298/597'):
+print>>file_save, "readFiles=["
+for root, dirs, files in os.walk(r'/eos/cms'+path_):
     for file in files:
         if file.endswith('.dat'):
             asps.append(file)
-            print>>file_save, file+"',"
-
+            print>>file_save, "'"+path_ + file + "',"
+print>>file_save, "]"
 file_save.close()

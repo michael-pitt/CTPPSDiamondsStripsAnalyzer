@@ -10,7 +10,7 @@ process = cms.Process("SkimmerCTPPS")
 process.load("FWCore.MessageService.MessageLogger_cfi")
 process.options   = cms.untracked.PSet(
 )
-process.maxEvents = cms.untracked.PSet( input = cms.untracked.int32(50000) )
+process.maxEvents = cms.untracked.PSet( input = cms.untracked.int32(-1) )
 
 #########################
 #    RAW-DIGI-RECO      #
@@ -50,11 +50,15 @@ process.load('RecoCTPPS.TotemRPLocal.ctppsDiamondLocalTracks_cfi')
 #########################
 #      Input files      #
 #########################
-process.source = cms.Source("NewEventStreamFileReader",
-    fileNames = cms.untracked.vstring(
-        '/store/t0streamer/Data/Physics/000/298/597/run298597_ls0260_streamPhysics_StorageManager.dat',
-    )
-)
+
+#process.source = cms.Source("NewEventStreamFileReader",
+#    fileNames = cms.untracked.vstring(
+#	'/store/t0streamer/Data/PhysicsCommissioning/000/298/996/run298996_ls0208_streamPhysicsCommissioning_StorageManager.dat'
+#    )
+#)
+
+from CTPPSDiamondAnalyzer.Skimmer.AutoGenerate_cff import readFiles
+process.source = cms.Source ("NewEventStreamFileReader",fileNames = cms.untracked.vstring(readFiles))
 
 ######################
 #      Analyzer      #
@@ -66,9 +70,9 @@ process.Monitor = cms.EDAnalyzer("CTPPSMonitor",
     tagDiamondRecHits = cms.InputTag("ctppsDiamondRecHits"),
     tagDiamondLocalTracks = cms.InputTag("ctppsDiamondLocalTracks"),
     tagLocalTrack = cms.InputTag("totemRPLocalTrackFitter"),
-    bx = cms.untracked.vint32(0,1786), #empty vector: no BX selection
+    bx = cms.untracked.vint32(), #empty vector: no BX selection
     verbosity = cms.untracked.uint32(0),
-    path = cms.untracked.string("Run298597")
+    path = cms.untracked.string("Run298997")
 )
 
 ######################
