@@ -9,13 +9,34 @@ git cms-merge-topic CTPPS:diamond_unpacker_afterTS1_2017
 git cms-addpkg EventFilter/CTPPSRawToDigi
 git cms-addpkg CondFormats/CTPPSReadoutObjects
 cd CondFormats/CTPPSReadoutObjects/xml
-wget https://raw.githubusercontent.com/CTPPS/cmssw/diamond_mapping2017_checkedTS1/CondFormats/CTPPSReadoutObjects/xml/mapping_timing_diamond_2017.xml
+wget -q -N https://raw.githubusercontent.com/CTPPS/cmssw/diamond_mapping2017_checkedTS1/CondFormats/CTPPSReadoutObjects/xml/mapping_timing_diamond_2017.xml
+cd $CMSSW_BASE/src
 git clone https://github.com/dfigueiredo/CTPPSDiamondAnalyzer.git
 scram b -j 8
 ```
 
 <b>Running Monitor Off-Line:</b>
 
+Edit and Run a python script to generate a list of files from a specific path.
+i.e: /store/t0streamer/Data/PhysicsCommissioning/000/298/996/
+
+```
+cd $CMSSW_BASE/src/CTPPSDiamondAnalyzer/Skimmer/test
+python generateFiles.py (it will generate the file python/AutoGenerate_cff.py that includes the list of files in t0streamer)
+```
+
+In case you would like to run a single file, edit RunMonitor.py. 
+
+<b>Running Monitor Off-Line:</b>
+
 ```
 cmsRun CTPPSDiamondAnalyzer/Skimmer/test/RunMonitor.py
 ```
+
+<b>Copy the Generate Plots to your privete DNS folder in lxplus:</b>
+
+```
+cp -r RunXXXXX /afs/cern.ch/user/public/html/. (or www)
+```
+
+This is accessible from http://cmsdoc.cern.ch/~$USER
