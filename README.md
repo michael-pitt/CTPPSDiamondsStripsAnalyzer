@@ -32,6 +32,13 @@ In case you would like to run a single file, edit RunMonitor.py.
 ```
 cmsRun CTPPSDiamondAnalyzer/Skimmer/test/RunMonitor.py
 ```
+In case you would like to submit jobs on lxbatch:
+
+```
+cd $CMSSW_BASE/src/CTPPSDiamondAnalyzer/Skimmer/test
+python generateFiles.py (it will generate the file python/AutoGenerate_cff.py that includes the list of files in t0streamer)
+./sendJob.sh (outputs will be saved on $CMSSW_BASE/src/CTPPSDiamondAnalyzer/Skimmer/test)
+```
 
 <b>Copy the Generate Plots to your Private DNS folder in lxplus:</b>
 

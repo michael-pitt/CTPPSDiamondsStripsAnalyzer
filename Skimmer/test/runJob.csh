@@ -9,3 +9,4 @@ env
 
 cmsRun /afs/cern.ch/user/d/dmf/private/work/private/PPSDAQ/NewUnpacker/CMSSW_9_2_6/src/CTPPSDiamondAnalyzer/Skimmer/test/RunMonitor.py
 cp -r Run*/ /afs/cern.ch/user/d/dmf/private/work/private/PPSDAQ/NewUnpacker/CMSSW_9_2_6/src/CTPPSDiamondAnalyzer/Skimmer/test/.
+cp -r monitor*root /afs/cern.ch/user/d/dmf/private/work/private/PPSDAQ/NewUnpacker/CMSSW_9_2_6/src/CTPPSDiamondAnalyzer/Skimmer/test/.
