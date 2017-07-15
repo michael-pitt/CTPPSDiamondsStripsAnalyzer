@@ -40,7 +40,7 @@ python generateFiles.py (it will generate the file python/AutoGenerate_cff.py th
 ./sendJob.sh (outputs will be saved on $CMSSW_BASE/src/CTPPSDiamondAnalyzer/Skimmer/test)
 ```
 
-<b>Copy the Generate Plots to your Private DNS folder in lxplus:</b>
+<b>Copy the Plots to your Private DNS folder in lxplus:</b>
 
 ```
 cp -r RunXXXXX /afs/cern.ch/user/public/html/. (or www)
