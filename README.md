@@ -17,7 +17,7 @@ git clone https://github.com/dfigueiredo/CTPPSDiamondAnalyzer.git
 scram b -j 8
 ```
 
-If your are using the latest CMSSW release which include them:
+If you are using the latest CMSSW release which include them:
 
 ```
 cmsrel CMSSW_9_2_6
