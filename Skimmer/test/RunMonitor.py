@@ -2,6 +2,9 @@ import FWCore.ParameterSet.Config as cms
 import FWCore.Utilities.FileUtils as FileUtils
 import copy
 
+config.source = "PoolSource" # RAW
+#config.source = "NewEventStreamFileReader" # dat
+
 process = cms.Process("SkimmerCTPPS")
 
 #########################
@@ -28,7 +31,7 @@ process.totemDAQMappingESSourceXML_TimingDiamond = cms.ESSource("TotemDAQMapping
     # after diamonds inserted in DAQ
     cms.PSet(
       validityRange = cms.EventRange("283820:min - 999999999:max"),
-      mappingFileNames = cms.vstring("CondFormats/CTPPSReadoutObjects/xml/mapping_timing_diamond.xml"),
+      mappingFileNames = cms.vstring("CondFormats/CTPPSReadoutObjects/xml/mapping_timing_diamond_2017.xml"),
       maskFileNames = cms.vstring()
     )
   )
@@ -50,15 +53,9 @@ process.load('RecoCTPPS.TotemRPLocal.ctppsDiamondLocalTracks_cfi')
 #########################
 #      Input files      #
 #########################
-
-#process.source = cms.Source("NewEventStreamFileReader",
-#    fileNames = cms.untracked.vstring(
-#	'/store/t0streamer/Data/PhysicsCommissioning/000/298/996/run298996_ls0208_streamPhysicsCommissioning_StorageManager.dat'
-#    )
-#)
-
 from CTPPSDiamondAnalyzer.Skimmer.AutoGenerate_cff import readFiles
-process.source = cms.Source ("NewEventStreamFileReader",fileNames = cms.untracked.vstring(readFiles))
+process.source = cms.Source (config.source,fileNames = cms.untracked.vstring(readFiles))
+
 
 ######################
 #      Analyzer      #
@@ -70,17 +67,9 @@ process.Monitor = cms.EDAnalyzer("CTPPSMonitor",
     tagDiamondRecHits = cms.InputTag("ctppsDiamondRecHits"),
     tagDiamondLocalTracks = cms.InputTag("ctppsDiamondLocalTracks"),
     tagLocalTrack = cms.InputTag("totemRPLocalTrackFitter"),
-    bx = cms.untracked.vint32(), #empty vector: no BX selection
+    bx = cms.untracked.vint32(1579), #empty vector: no BX selection
     verbosity = cms.untracked.uint32(0),
-    path = cms.untracked.string("Run298997")
-)
-
-######################
-#      TFile         #
-######################
-process.TFileService = cms.Service('TFileService',
-    fileName = cms.string('monitor_histograms.root'),
-    closeFileFast = cms.untracked.bool(True)
+    path = cms.untracked.string("Run299065")
 )
 
 process.p = cms.Path(

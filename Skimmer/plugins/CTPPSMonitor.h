@@ -35,6 +35,8 @@
 #include <TVector3.h>
 #include <TLorentzVector.h>
 #include <TH1D.h>
+#include <TH2D.h>
+#include <TProfile.h>
 #include <TDirectory.h>
 #include <TSystem.h>
 #include <TCanvas.h>
@@ -75,6 +77,8 @@ class CTPPSMonitor : public edm::one::EDAnalyzer<edm::one::SharedResources>  {
     static void fillDescriptions(edm::ConfigurationDescriptions& descriptions);
 
   private:
+
+    TFile* fs;
     virtual void beginJob() override;
     virtual void analyze(const edm::Event&, const edm::EventSetup&) override;
     virtual void endJob() override;
@@ -94,6 +98,8 @@ class CTPPSMonitor : public edm::one::EDAnalyzer<edm::one::SharedResources>  {
     int lumi_section;
     int orbit;
 
+    std::vector<std::vector<std::vector<TProfile*> > > hVector_h_ch_mean_getLeading_lumisection;
+    std::vector<std::vector<std::vector<TH2F*> > > hVector_h_ch_getLeading_lumisection;
     std::vector<std::vector<std::vector<TH1D*> > > hVector_h_ch_getLeading;
     std::vector<std::vector<std::vector<TH1D*> > > hVector_h_ch_getTrailing;
     std::vector<std::vector<std::vector<TH1D*> > > hVector_h_ch_deltat;
