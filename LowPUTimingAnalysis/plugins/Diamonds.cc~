@@ -128,6 +128,7 @@ Diamonds::analyze(const edm::Event& iEvent, const edm::EventSetup& iSetup)
   nArmsTiming = 0;
   nHitsTiming = 0;
   nTracksTiming = 0;
+  nRecHitsTiming = 0;
   nLayersArm1Timing = 0;
   nLayersArm2Timing = 0;
   nArmsStrips = 0;
@@ -186,10 +187,15 @@ Diamonds::analyze(const edm::Event& iEvent, const edm::EventSetup& iSetup)
       TimingTrackX[i] = -999; 
       TimingTrackY[i] = -999;
       TimingTrackZ[i] = -999;
-      TimingTrackOOTIndex[i] = 0;
-      TimingTrackMultiHit[i] = 0;
+      TimingTrackOOTIndex[i] = -999;
+      TimingTrackMultiHit[i] = -999;
       TimingTrackChi2[i] = -999;
-
+      TimingRecHitT[i] = -999;
+      TimingRecHitX[i] = -999;
+      TimingRecHitY[i] = -999;
+      TimingRecHitOOTIndex[i] = -999; 
+      TimingRecHitMultiHit[i] = -999;
+      TimingRecHitToT[i] = 0;
       ArmStrips[i] = -1;
       StripTrackX[i] = 0; 
       StripTrackY[i] = 0;
@@ -223,7 +229,6 @@ Diamonds::analyze(const edm::Event& iEvent, const edm::EventSetup& iSetup)
   //    }
 
   /* RecHits - timing */
-  /*
   for ( const auto& rechits_ds : *diamondRecHits ) {
     const CTPPSDiamondDetId detid( rechits_ds.detId() );
     for ( const auto& rechit : rechits_ds ) {
@@ -244,6 +249,15 @@ Diamonds::analyze(const edm::Event& iEvent, const edm::EventSetup& iSetup)
           if(detid.plane() == 2) layer3arm2 = 1;
           if(detid.plane() == 3) layer4arm2 = 1;
 	}
+      TimingRecHitT[nRecHitsTiming] = -999;
+      TimingRecHitX[nRecHitsTiming] = -999;
+      TimingRecHitY[nRecHitsTiming] = -999;
+      TimingRecHitOOTIndex[nRecHitsTiming] = -999;
+      TimingRecHitMultiHit[nRecHitsTiming] = -999;
+      TimingRecHitToT[nRecHitsTiming] = 0;
+      nRecHitsTiming++;
+
+      /*
       ChannelTiming[nHitsTiming] = detid.channel();
       PlaneTiming[nHitsTiming] = detid.plane();
       LeadingEdge[nHitsTiming] = rechit.getT();
@@ -254,9 +268,10 @@ Diamonds::analyze(const edm::Event& iEvent, const edm::EventSetup& iSetup)
       XTiming[nHitsTiming] = rechit.getX();
       YTiming[nHitsTiming] = rechit.getY();
       nHitsTiming++;
+      */
     }
   }
-  */
+
 
   /* Diamond tracks */
   for ( const auto& ds2 : *diamondLocalTracks ) 
@@ -357,7 +372,6 @@ Diamonds::analyze(const edm::Event& iEvent, const edm::EventSetup& iSetup)
       StripTrackY[nTracksStrips] = tr1.getY0();
       StripTrackTx[nTracksStrips] = tr1.getTx();
       StripTrackTy[nTracksStrips] = tr1.getTy();
-      std::cout << "Arm = " << arm1 << ", z = " << tr1.getZ0() << std::endl;
       ArmStrips[nTracksStrips] = arm1;
 
       if(arm1 == 0)
@@ -583,14 +597,15 @@ Diamonds::beginJob()
   tree->Branch("XTiming", &XTiming, "XTiming[nHitsTiming]/D");
   tree->Branch("YTiming", &YTiming, "YTiming[nHitsTiming]/D");
 
-  tree->Branch("TimingTrackT", &TimingTrackT, "TimingTrackT[nHitsTiming]/D");
-  tree->Branch("TimingTrackTErr", &TimingTrackTErr, "TimingTrackTErr[nHitsTiming]/D");
-  tree->Branch("TimingTrackX", &TimingTrackX, "TimingTrackX[nHitsTiming]/D");
-  tree->Branch("TimingTrackY", &TimingTrackY, "TimingTrackY[nHitsTiming]/D");
-  tree->Branch("TimingTrackZ", &TimingTrackZ, "TimingTrackZ[nHitsTiming]/D");
-  tree->Branch("TimingTrackOOTIndex", &TimingTrackOOTIndex, "TimingTrackOOTIndex[nHitsTiming]/D");
-  tree->Branch("TimingTrackMultiHit", &TimingTrackMultiHit, "TimingTrackMultiHit[nHitsTiming]/D");
-  tree->Branch("TimingTrackChi2", &TimingTrackChi2, "TimingTrackChi2[nHitsTiming]/D");
+  tree->Branch("nTracksTiming", &nTracksTiming, "nTracksTiming/I");
+  tree->Branch("TimingTrackT", &TimingTrackT, "TimingTrackT[nTracksTiming]/D");
+  tree->Branch("TimingTrackTErr", &TimingTrackTErr, "TimingTrackTErr[nTracksTiming]/D");
+  tree->Branch("TimingTrackX", &TimingTrackX, "TimingTrackX[nTracksTiming]/D");
+  tree->Branch("TimingTrackY", &TimingTrackY, "TimingTrackY[nTracksTiming]/D");
+  tree->Branch("TimingTrackZ", &TimingTrackZ, "TimingTrackZ[nTracksTiming]/D");
+  tree->Branch("TimingTrackOOTIndex", &TimingTrackOOTIndex, "TimingTrackOOTIndex[nTracksTiming]/I");
+  tree->Branch("TimingTrackMultiHit", &TimingTrackMultiHit, "TimingTrackMultiHit[nTracksTiming]/I");
+  tree->Branch("TimingTrackChi2", &TimingTrackChi2, "TimingTrackChi2[nTracksTiming]/D");
 
   //  tree->Branch("IsClock", &IsClock, "IsClock[nHitsTiming]/I");
   tree->Branch("nVertices", &nVertices, "nVertices/I");

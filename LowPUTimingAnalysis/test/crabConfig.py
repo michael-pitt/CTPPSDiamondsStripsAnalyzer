@@ -8,7 +8,7 @@ config.General.transferLogs = True
 
 config.JobType.pluginName = 'Analysis'
 config.JobType.psetName = 'zb10_ntuple_diamond_rereco_test_cfg.py'
-config.JobType.outputFiles = ['output_ZeroBias1.root']
+config.JobType.outputFiles = ['output_ZeroBias.root']
 
 config.Data.inputDataset = '/ZeroBias1/Run2017C-PromptReco-v2/AOD'
 config.Data.useParent = True

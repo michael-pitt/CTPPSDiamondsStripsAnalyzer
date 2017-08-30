@@ -59,7 +59,7 @@ process.mydiamonds = cms.EDAnalyzer(
     tagRPixDigi = cms.InputTag( "ctppsPixelDigis" ),
     tagRPixCluster = cms.InputTag( "ctppsPixelClusters" ),
     tagRPixRecHit = cms.InputTag( "ctppsPixelRecHits" ),
-    outfilename = cms.untracked.string( "output_ZeroBias1.root" )
+    outfilename = cms.untracked.string( "output_ZeroBias.root" )
 )
 
 

@@ -132,12 +132,16 @@ class Diamonds : public edm::EDAnalyzer {
       Int_t BX, Run, LumiSection, EventNum;
 
       Double_t LeadingEdge[100], TrailingEdge[100], ToT[100], XTiming[100], YTiming[100]; 
-      Double_t TimingTrackT[100], TimingTrackTErr[100], TimingTrackX[100], TimingTrackY[100], TimingTrackZ[100];
-      Double_t TimingTrackOOTIndex[100], TimingTrackMultiHit[100], TimingTrackChi2[100];
+      Double_t TimingTrackT[100], TimingTrackTErr[100], TimingTrackX[100], TimingTrackY[100], TimingTrackZ[100], TimingTrackChi2[100];
+      Double_t TimingRecHitT[100], TimingRecHitX[100], TimingRecHitY[100], TimingRecHitToT[100];
+      Int_t TimingTrackOOTIndex[100],TimingRecHitOOTIndex[100], TimingTrackMultiHit[100], TimingRecHitMultiHit[100];
       unsigned int ChannelTiming[100], MultiHit[100], ArmTiming[100], OOTIndex[100], PlaneTiming[100];
+      unsigned int TimingRecHitChannel[100], TimingRecHitArm[100], TimingRecHitPlane[100];
+      
+      
 
       //Double_t AvgInstDelLumi, BunchInstLumi[3]; 
-      Int_t nVertices, nArmsTiming, nJets, nHitsTiming, nLayersArm1Timing, nLayersArm2Timing, nTracksTiming;
+      Int_t nVertices, nArmsTiming, nJets, nHitsTiming, nLayersArm1Timing, nLayersArm2Timing, nTracksTiming, nRecHitsTiming;
       Int_t nlayersarm1, nlayersarm2;
 
       Int_t nTracksStrips, nArmsStrips;
