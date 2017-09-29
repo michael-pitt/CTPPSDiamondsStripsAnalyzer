@@ -31,6 +31,7 @@ Diamonds::Diamonds(const edm::ParameterSet& iConfig) :
   tokenPixelDigi_   ( consumes<edm::DetSetVector<CTPPSPixelDigi> >(iConfig.getParameter<edm::InputTag>("tagRPixDigi") ) ),
   tokenPixelCluster_ ( consumes<edm::DetSetVector<CTPPSPixelCluster> >(iConfig.getParameter<edm::InputTag>("tagRPixCluster") ) ),
   tokenPixelRecHit_  ( consumes<edm::DetSetVector<CTPPSPixelRecHit> >(iConfig.getParameter<edm::InputTag>("tagRPixRecHit") ) ),
+  tokenPixelLocalTrack_  ( consumes<edm::DetSetVector<CTPPSPixelLocalTrack> >(iConfig.getParameter<edm::InputTag>("tagRPixLocalTrack") ) ),
   verticesToken_    ( consumes< edm::View<reco::Vertex> >( iConfig.getParameter<edm::InputTag>( "verticesTag" ) ) ),
   jetsToken_        ( consumes< reco::PFJetCollection >(iConfig.getParameter<edm::InputTag>( "jetsTag" ) ) ),
   pflowToken_       ( consumes< reco::PFCandidateCollection >( iConfig.getParameter<edm::InputTag>("tagParticleFlow") ) )
@@ -100,6 +101,9 @@ Diamonds::analyze(const edm::Event& iEvent, const edm::EventSetup& iSetup)
   edm::Handle< edm::DetSetVector<CTPPSPixelRecHit> > pixRecHits;
   iEvent.getByToken(tokenPixelRecHit_, pixRecHits);
 
+  edm::Handle< edm::DetSetVector<CTPPSPixelLocalTrack> > pixLocalTracks;
+  iEvent.getByToken(tokenPixelLocalTrack_, pixLocalTracks);
+
   edm::Handle< edm::View<reco::Vertex> > vertices;
   iEvent.getByToken( verticesToken_, vertices );
 
@@ -140,6 +144,11 @@ Diamonds::analyze(const edm::Event& iEvent, const edm::EventSetup& iSetup)
   nArmsPixRecHits = 0;
   nLayersArm1PixRecHits = 0;
   nLayersArm2PixRecHits = 0;
+  nPixelTracks = 0;
+  nArmsPixelTracks = 0;
+  nPixelTracksArm1 = 0;
+  nPixelTracksArm2 = 0;
+
   nVertices = 0;
   nJets = 0;
   nPFCand = 0;
@@ -187,6 +196,7 @@ Diamonds::analyze(const edm::Event& iEvent, const edm::EventSetup& iSetup)
       TimingTrackX[i] = -999; 
       TimingTrackY[i] = -999;
       TimingTrackZ[i] = -999;
+      TimingTrackArm[i] = -1;
       TimingTrackOOTIndex[i] = -999;
       TimingTrackMultiHit[i] = -999;
       TimingTrackChi2[i] = -999;
@@ -213,6 +223,13 @@ Diamonds::analyze(const edm::Event& iEvent, const edm::EventSetup& iSetup)
       PixRecHitZ[i] = 0;
       PixRecHitArm[i] = -1;
       PixRecHitPlane[i] = -1;
+      PixTrackX[i] = 0;
+      PixTrackY[i] = 0;
+      PixTrackTx[i] = 0;
+      PixTrackTy[i] = 0;
+      PixTrackChi2[i] = 0;
+      PixTrackZ[i] = 0;
+      PixTrackArm[i] = -1;
     }
 
   for(int i = 0; i < 100; i++)
@@ -240,7 +257,10 @@ Diamonds::analyze(const edm::Event& iEvent, const edm::EventSetup& iSetup)
       TimingRecHitChannel[nRecHitsTiming] = detidforrh.channel();      
       TimingRecHitPlane[nRecHitsTiming] = detidforrh.plane();
       TimingRecHitT[nRecHitsTiming] = rechit.getT();
-      TimingRecHitX[nRecHitsTiming] = rechit.getX();                                                                                                            TimingRecHitY[nRecHitsTiming] = rechit.getY();                                                                                                            TimingRecHitOOTIndex[nRecHitsTiming] = rechit.getOOTIndex();                                                                                              TimingRecHitMultiHit[nRecHitsTiming] = rechit.getMultipleHits();
+      TimingRecHitX[nRecHitsTiming] = rechit.getX();                                                                                                            
+      TimingRecHitY[nRecHitsTiming] = rechit.getY();                                                                                                            
+      TimingRecHitOOTIndex[nRecHitsTiming] = rechit.getOOTIndex();                                                                                              
+      TimingRecHitMultiHit[nRecHitsTiming] = rechit.getMultipleHits();
       TimingRecHitToT[nRecHitsTiming] = rechit.getToT();
       nRecHitsTiming++;
     }
@@ -255,6 +275,8 @@ Diamonds::analyze(const edm::Event& iEvent, const edm::EventSetup& iSetup)
 	  if ( ! tr2.isValid() ) continue;
 	  
 	  CTPPSDetId diamId2( ds2.detId() );
+	  unsigned int arm1 = diamId2.arm();
+
 	  //	  unsigned int arm2 = diamId2.arm();
 	  TimingTrackT[nTracksTiming] = tr2.getT();
 	  TimingTrackTErr[nTracksTiming] = tr2.getTSigma();
@@ -264,6 +286,8 @@ Diamonds::analyze(const edm::Event& iEvent, const edm::EventSetup& iSetup)
 	  TimingTrackOOTIndex[nTracksTiming] = tr2.getOOTIndex();
 	  TimingTrackMultiHit[nTracksTiming] = tr2.getMultipleHits();
 	  TimingTrackChi2[nTracksTiming] = tr2.getChiSquared();
+	  TimingTrackArm[nTracksTiming] = arm1;
+
 	  nTracksTiming++;
 	}
     }
@@ -466,6 +490,32 @@ Diamonds::analyze(const edm::Event& iEvent, const edm::EventSetup& iSetup)
   nLayersArm1PixRecHits = planespixelsrharm1;
   nLayersArm2PixRecHits = planespixelsrharm2;
 
+  /* Pixel tracks */
+  for ( const auto& dspxtr1 : *pixLocalTracks ) {
+    for ( const auto& pxtr1 : dspxtr1 ) {
+      if ( ! pxtr1.isValid() )  continue;
+
+      CTPPSDetId pxrpId1( dspxtr1.detId() );
+      unsigned int pxarm1 = pxrpId1.arm();
+
+      PixTrackX[nPixelTracks] = pxtr1.getX0();
+      PixTrackY[nPixelTracks] = pxtr1.getY0();
+      PixTrackTx[nPixelTracks] = pxtr1.getTx();
+      PixTrackTy[nPixelTracks] = pxtr1.getTy();
+      PixTrackChi2[nPixelTracks] = pxtr1.getChiSquared();
+      PixTrackZ[nPixelTracks] = pxtr1.getZ0();
+      PixTrackArm[nPixelTracks] = pxarm1;
+
+      if(pxarm1 == 0)
+	nPixelTracksArm1++;
+      if(pxarm1 == 1)
+	nPixelTracksArm2++;
+
+      nPixelTracks++;
+    }
+  }
+
+  nArmsPixelTracks = (nPixelTracksArm1 > 0) + (nPixelTracksArm2 > 0);
 
   /* Primary vertices */
   for ( const auto& vtx : *vertices ) {                                                                                                                                        
@@ -591,6 +641,7 @@ Diamonds::beginJob()
   tree->Branch("TimingTrackOOTIndex", &TimingTrackOOTIndex, "TimingTrackOOTIndex[nTracksTiming]/I");
   tree->Branch("TimingTrackMultiHit", &TimingTrackMultiHit, "TimingTrackMultiHit[nTracksTiming]/I");
   tree->Branch("TimingTrackChi2", &TimingTrackChi2, "TimingTrackChi2[nTracksTiming]/D");
+  tree->Branch("TimingTrackArm", &TimingTrackArm, "TimingTrackArm[nTracksTiming]/I");
 
   //  tree->Branch("IsClock", &IsClock, "IsClock[nHitsTiming]/I");
   tree->Branch("nVertices", &nVertices, "nVertices/I");
@@ -618,6 +669,17 @@ Diamonds::beginJob()
   tree->Branch("nArmsPixRecHits", &nArmsPixRecHits, "nArmsPixRecHits/I");
   tree->Branch("nLayersArm1PixRecHits", &nLayersArm1PixRecHits, "nLayersArm1PixRecHits/I");
   tree->Branch("nLayersArm2PixRecHits", &nLayersArm2PixRecHits, "nLayersArm2PixRecHits/I");
+
+  tree->Branch("nPixelTracks", &nPixelTracks, "nPixelTracks/I");
+  tree->Branch("PixTrackX", &PixTrackX, "PixTrackX[nPixelTracks]/D");
+  tree->Branch("PixTrackY", &PixTrackY, "PixTrackY[nPixelTracks]/D");
+  tree->Branch("PixTrackTx", &PixTrackTx, "PixTrackTx[nPixelTracks]/D");
+  tree->Branch("PixTrackTy", &PixTrackTy, "PixTrackTy[nPixelTracks]/D");
+  tree->Branch("PixTrackChi2", &PixTrackChi2, "PixTrackChi2[nPixelTracks]/D");
+  tree->Branch("PixTrackZ", &PixTrackZ, "PixTrackZ[nPixelTracks]/D");
+  tree->Branch("PixTrackArm", &PixTrackArm, "PixTrackArm[nPixelTracks]/I");
+  tree->Branch("nArmsStrips", &nArmsStrips, "nArmsStrips/I");
+
 
   tree->Branch("PrimVertexZ", &PrimVertexZ, "PrimVertexZ[nVertices]/D");
   tree->Branch("PrimVertexIsBS", &PrimVertexIsBS, "PrimVertexIsBS[nVertices]/I");

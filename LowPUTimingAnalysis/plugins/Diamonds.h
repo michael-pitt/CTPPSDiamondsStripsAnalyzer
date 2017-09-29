@@ -60,6 +60,7 @@
 #include "DataFormats/CTPPSDigi/interface/CTPPSPixelDigiCollection.h"
 #include "DataFormats/CTPPSReco/interface/CTPPSPixelCluster.h"  
 #include "DataFormats/CTPPSReco/interface/CTPPSPixelRecHit.h"
+#include "DataFormats/CTPPSReco/interface/CTPPSPixelLocalTrack.h"
 
 #include <TFile.h>
 #include <TTree.h>
@@ -120,6 +121,8 @@ class Diamonds : public edm::EDAnalyzer {
       edm::EDGetTokenT< edm::DetSetVector<CTPPSPixelDigi> > tokenPixelDigi_;
       edm::EDGetTokenT< edm::DetSetVector<CTPPSPixelCluster> > tokenPixelCluster_;
       edm::EDGetTokenT< edm::DetSetVector<CTPPSPixelRecHit> > tokenPixelRecHit_;
+      edm::EDGetTokenT< edm::DetSetVector<CTPPSPixelLocalTrack> > tokenPixelLocalTrack_;
+
       edm::EDGetTokenT< edm::View<reco::Vertex> > verticesToken_;
       edm::EDGetTokenT<reco::PFJetCollection>  jetsToken_;
       edm::EDGetTokenT<reco::PFCandidateCollection> pflowToken_;
@@ -134,12 +137,10 @@ class Diamonds : public edm::EDAnalyzer {
       Double_t LeadingEdge[100], TrailingEdge[100], ToT[100], XTiming[100], YTiming[100]; 
       Double_t TimingTrackT[100], TimingTrackTErr[100], TimingTrackX[100], TimingTrackY[100], TimingTrackZ[100], TimingTrackChi2[100];
       Double_t TimingRecHitT[100], TimingRecHitX[100], TimingRecHitY[100], TimingRecHitToT[100];
-      Int_t TimingTrackOOTIndex[100],TimingRecHitOOTIndex[100], TimingTrackMultiHit[100], TimingRecHitMultiHit[100];
+      Int_t TimingTrackOOTIndex[100],TimingRecHitOOTIndex[100], TimingTrackMultiHit[100], TimingRecHitMultiHit[100], TimingTrackArm[100];
       unsigned int ChannelTiming[100], MultiHit[100], ArmTiming[100], OOTIndex[100], PlaneTiming[100];
       unsigned int TimingRecHitChannel[100], TimingRecHitArm[100], TimingRecHitPlane[100];
       
-      
-
       //Double_t AvgInstDelLumi, BunchInstLumi[3]; 
       Int_t nVertices, nArmsTiming, nJets, nHitsTiming, nLayersArm1Timing, nLayersArm2Timing, nTracksTiming, nRecHitsTiming;
       Int_t nlayersarm1, nlayersarm2;
@@ -152,6 +153,10 @@ class Diamonds : public edm::EDAnalyzer {
       Int_t nPixelRecHits, nArmsPixRecHits, nLayersArm1PixRecHits, nLayersArm2PixRecHits;
       Double_t PixRecHitX[1000], PixRecHitY[1000], PixRecHitZ[1000];
       Int_t PixRecHitArm[1000], PixRecHitPlane[1000];
+
+      Int_t nPixelTracks, nArmsPixelTracks, nPixelTracksArm1, nPixelTracksArm2;
+      Double_t PixTrackX[1000], PixTrackY[1000], PixTrackTx[1000], PixTrackTy[1000], PixTrackChi2[1000], PixTrackZ[1000];
+      Int_t PixTrackArm[1000];
 
       Double_t PrimVertexZ[100];
       Int_t PrimVertexIsBS[100];

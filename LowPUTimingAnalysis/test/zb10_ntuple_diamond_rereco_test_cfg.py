@@ -1,4 +1,4 @@
-import FWCore.ParameterSet.Config as cms
+41;309;0cimport FWCore.ParameterSet.Config as cms
 
 from Configuration.StandardSequences.Eras import eras
 
@@ -59,6 +59,7 @@ process.mydiamonds = cms.EDAnalyzer(
     tagRPixDigi = cms.InputTag( "ctppsPixelDigis" ),
     tagRPixCluster = cms.InputTag( "ctppsPixelClusters" ),
     tagRPixRecHit = cms.InputTag( "ctppsPixelRecHits" ),
+    tagRPixLocalTrack = cms.InputTag( "ctppsPixelLocalTracks" ),
     outfilename = cms.untracked.string( "output_ZeroBias.root" )
 )
 
@@ -85,7 +86,8 @@ process.load("RecoCTPPS.Configuration.recoCTPPS_cff")
 
 
 process.ALL = cms.Path(
-    process.ctppsDiamondRawToDigi * 
+#    process.ctppsDiamondRawToDigi * 
+    process.ctppsRawToDigi * 
     process.recoCTPPS * 
     process.mydiamonds
                        )
