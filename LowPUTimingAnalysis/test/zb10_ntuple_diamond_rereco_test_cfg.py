@@ -1,4 +1,4 @@
-41;309;0cimport FWCore.ParameterSet.Config as cms
+import FWCore.ParameterSet.Config as cms
 
 from Configuration.StandardSequences.Eras import eras
 
