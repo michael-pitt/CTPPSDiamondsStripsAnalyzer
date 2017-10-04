@@ -4,19 +4,15 @@
 other monitor/skimming code]
 
 ---------------------------------------------------------------
-CMSSW_9_4_X with pixel tracks
+CMSSW_9_4_X with pixel tracks (9_4_0_pre2 or later)
 ---------------------------------------------------------------
-Use a recent integration build - for example:
+cmsrel CMSSW_9_4_0_pre2
 
-cmsrel CMSSW_9_4_X_2017-09-27-2300
-
-cd CMSSW_9_4_X_2017-09-27-2300/src
+cd CMSSW_9_4_0_pre2
 
 cmsenv
 
 git cms-init
-
-git cms-merge-topic 20438
 
 git clone https://github.com/jjhollar/CTPPSDiamondAnalyzer.git
 
