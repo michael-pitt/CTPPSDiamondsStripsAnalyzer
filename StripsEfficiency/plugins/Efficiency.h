@@ -23,17 +23,6 @@
 #include "FWCore/Common/interface/TriggerNames.h"
 #include "HLTrigger/HLTcore/interface/HLTConfigProvider.h"
 
-// Central
-#include "DataFormats/BeamSpot/interface/BeamSpot.h"
-#include "DataFormats/VertexReco/interface/Vertex.h"
-#include "DataFormats/JetReco/interface/PFJet.h"
-#include "DataFormats/JetReco/interface/PFJetCollection.h"
-#include "DataFormats/ParticleFlowCandidate/interface/PFCandidate.h"
-#include "DataFormats/ParticleFlowCandidate/interface/PFCandidateFwd.h"
-#include "DataFormats/TrackReco/interface/Track.h"
-#include "DataFormats/TrackReco/interface/TrackFwd.h"
-
-
 // RP 
 #include "DataFormats/Common/interface/DetSetVector.h" 
 #include "DataFormats/CTPPSDetId/interface/TotemRPDetId.h" 
@@ -65,7 +54,7 @@
 #include "DataFormats/CTPPSReco/interface/CTPPSPixelRecHit.h"
 #include "DataFormats/CTPPSReco/interface/CTPPSPixelLocalTrack.h"
 
-// Protons
+// Protons                                                                                                                                                                                
 #include "DataFormats/ProtonReco/interface/ProtonTrack.h"
 
 
@@ -101,10 +90,10 @@
 // class declaration
 //
 
-class Diamonds : public edm::EDAnalyzer {
+class Efficiency : public edm::EDAnalyzer {
    public:
-      explicit Diamonds(const edm::ParameterSet&);
-      ~Diamonds();
+      explicit Efficiency(const edm::ParameterSet&);
+      ~Efficiency();
 
       static void fillDescriptions(edm::ConfigurationDescriptions& descriptions);
 
@@ -125,24 +114,18 @@ class Diamonds : public edm::EDAnalyzer {
       edm::EDGetTokenT< edm::DetSetVector<TotemVFATStatus> > tokenStatus_;
       edm::EDGetTokenT< edm::DetSetVector<CTPPSDiamondDigi> > tokenDigi_;
       edm::EDGetTokenT< edm::DetSetVector<CTPPSDiamondRecHit> > tokenDiamondHit_;
-      edm::EDGetTokenT< edm::DetSetVector<CTPPSDiamondLocalTrack> > tokenDiamondTrack_;
-      edm::EDGetTokenT< edm::DetSetVector<TotemRPLocalTrack> > tokenLocalTrack_;
       edm::EDGetTokenT< std::vector<TotemFEDInfo> > tokenFEDInfo_;
       edm::EDGetTokenT< edm::DetSetVector<CTPPSPixelDigi> > tokenPixelDigi_;
       edm::EDGetTokenT< edm::DetSetVector<CTPPSPixelCluster> > tokenPixelCluster_;
       edm::EDGetTokenT< edm::DetSetVector<CTPPSPixelRecHit> > tokenPixelRecHit_;
-      edm::EDGetTokenT< edm::DetSetVector<CTPPSPixelLocalTrack> > tokenPixelLocalTrack_;
       edm::EDGetTokenT<std::vector<CTPPSLocalTrackLite> > pps_tracklite_token_;
 
-      edm::EDGetTokenT< edm::View<reco::Vertex> > verticesToken_;
-      edm::EDGetTokenT<reco::PFJetCollection>  jetsToken_;
-      edm::EDGetTokenT<reco::TrackCollection>  tracksToken_;
-      edm::EDGetTokenT<reco::PFCandidateCollection> pflowToken_;
-
-      edm::EDGetTokenT<reco::GenParticleCollection> tokenGen_;
-
+      edm::EDGetTokenT< edm::DetSetVector<TotemRPLocalTrack >> tokenLocalTrack_;
+      edm::EDGetTokenT< edm::DetSetVector<TotemRPUVPattern >> tokenUVPattern_;
+      edm::EDGetTokenT< edm::DetSetVector<TotemRPRecHit >> tokenRecHit_;
+      edm::EDGetTokenT< edm::DetSetVector<CTPPSPixelLocalTrack> > tokenPixelLocalTrack_;
+      edm::EDGetTokenT< edm::DetSetVector<CTPPSDiamondLocalTrack> > tokenDiamondTrack_;
       edm::EDGetTokenT<std::vector<reco::ProtonTrack>> tokenRecoProtons_;
-
       ////// Tree contents //////
 
 
@@ -150,54 +133,21 @@ class Diamonds : public edm::EDAnalyzer {
       // Run/event quantities
       Int_t BX, Run, LumiSection, EventNum;
 
-      Double_t LeadingEdge[100], TrailingEdge[100], ToT[100], XTiming[100], YTiming[100]; 
-      Double_t TimingTrackT[100], TimingTrackTErr[100], TimingTrackX[100], TimingTrackY[100], TimingTrackZ[100], TimingTrackChi2[100];
-      Double_t TimingRecHitT[100], TimingRecHitX[100], TimingRecHitY[100], TimingRecHitToT[100];
-      Int_t TimingTrackOOTIndex[100],TimingRecHitOOTIndex[100], TimingTrackMultiHit[100], TimingRecHitMultiHit[100], TimingTrackArm[100];
-      unsigned int ChannelTiming[100], MultiHit[100], ArmTiming[100], OOTIndex[100], PlaneTiming[100];
-      unsigned int TimingRecHitChannel[100], TimingRecHitArm[100], TimingRecHitPlane[100];
       
-      //Double_t AvgInstDelLumi, BunchInstLumi[3]; 
-      Int_t nVertices, nArmsTiming, nJets, nHitsTiming, nLayersArm1Timing, nLayersArm2Timing, nTracksTiming, nRecHitsTiming;
-      Int_t nlayersarm1, nlayersarm2;
-
-      Int_t nTracksStrips, nArmsStrips;
-      Int_t ArmStrips[100];
-      Double_t StripTrackX[100], StripTrackY[100], StripTrackTx[100], StripTrackTy[100];
-
-      Int_t nArmsPixelDigis, nLayersArm1PixelDigis, nLayersArm2PixelDigis; 
-      Int_t nPixelRecHits, nArmsPixRecHits, nLayersArm1PixRecHits, nLayersArm2PixRecHits;
-      Double_t PixRecHitX[1000], PixRecHitY[1000], PixRecHitZ[1000];
-      Int_t PixRecHitArm[1000], PixRecHitPlane[1000];
-
-      Int_t nPixelTracks, nArmsPixelTracks, nPixelTracksArm1, nPixelTracksArm2;
-      Double_t PixTrackX[1000], PixTrackY[1000], PixTrackTx[1000], PixTrackTy[1000], PixTrackChi2[1000], PixTrackZ[1000];
-      Int_t PixTrackArm[1000];
-
       Int_t nLiteTracks;
+      Int_t nStripTracks;
       Float_t TrackLiteX[1000], TrackLiteY[1000];
+      Float_t StripTrackX[4], StripTrackY[4], StripTrackThX[4], StripTrackThY[4];
       Int_t TrackLiteRPID[1000];
+      Int_t StripTrackValid[4], StripTrackRPID[4], StripTrackTooFullU[4], StripTrackTooFullV[4], StripTrackUPatterns[4], StripTrackVPatterns[4];
+      Int_t nPixelTracks;
+      Double_t PixTrackX[1000], PixTrackY[1000], PixTrackThX[1000], PixTrackThY[1000], PixTrackChi2[1000], PixTrackZ[1000];
+      Int_t PixTrackNdof[1000];
+      Int_t PixTrackArm[1000];
+      Int_t nTimingTracks;
+      Float_t TimingTrackX[100], TimingTrackY[100], TimingTrackZ[100];
+      Int_t TimingTrackArm[100];
 
-      Double_t PrimVertexZ[100];
-      Int_t PrimVertexIsBS[100];
-
-      Int_t nTracksNoVertex;
-      Double_t TrackZNoVertex[1000];
-
-      Double_t JetCandEt[1000];
-      Double_t JetCandEta[1000];
-      Double_t JetCandPhi[1000];
-      Double_t JetCandE[1000];
-      Int_t nPFCand;
-      Int_t PFCandID[1000];
-      Double_t PFCandE[1000], PFCandEta[1000], PFCandPhi[1000];
-      Double_t PFCentralMass, PFCentralY, DijetMass, DijetY, PFCentralPx, PFCentralPy, PFCentralPz, PFCentralE;
-      Double_t PFCentralMass_NoThresh, PFCentralY_NoThresh, PFCentralPx_NoThresh, PFCentralPy_NoThresh, PFCentralPz_NoThresh, PFCentralE_NoThresh;
-      Int_t   nHFplus, nHFminus;
-      Double_t HFplusE, HFminusE;
-
-      Int_t nGenProtons;
-      Float_t GenProtXi[100], GenProtPz[100];
 
       Int_t nProtons;
       Float_t ProtonXi[100];
@@ -208,7 +158,6 @@ class Diamonds : public edm::EDAnalyzer {
       Int_t ProtonRPID[100];
       Int_t ProtonArm[100];
 
-      bool isMC;
 };
 
 //
@@ -218,7 +167,7 @@ class Diamonds : public edm::EDAnalyzer {
 //
 // static data member definitions
 //
-TFile* file;
-TTree* tree;
+TFile* efffile;
+TTree* efftree;
 
 #endif

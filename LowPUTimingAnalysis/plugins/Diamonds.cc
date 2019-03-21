@@ -32,15 +32,21 @@ Diamonds::Diamonds(const edm::ParameterSet& iConfig) :
   tokenPixelCluster_ ( consumes<edm::DetSetVector<CTPPSPixelCluster> >(iConfig.getParameter<edm::InputTag>("tagRPixCluster") ) ),
   tokenPixelRecHit_  ( consumes<edm::DetSetVector<CTPPSPixelRecHit> >(iConfig.getParameter<edm::InputTag>("tagRPixRecHit") ) ),
   tokenPixelLocalTrack_  ( consumes<edm::DetSetVector<CTPPSPixelLocalTrack> >(iConfig.getParameter<edm::InputTag>("tagRPixLocalTrack") ) ),
+  pps_tracklite_token_ ( consumes<std::vector<CTPPSLocalTrackLite>>(iConfig.getParameter<edm::InputTag>("tagTrackLites") ) ),
   verticesToken_    ( consumes< edm::View<reco::Vertex> >( iConfig.getParameter<edm::InputTag>( "verticesTag" ) ) ),
   jetsToken_        ( consumes< reco::PFJetCollection >(iConfig.getParameter<edm::InputTag>( "jetsTag" ) ) ),
-  pflowToken_       ( consumes< reco::PFCandidateCollection >( iConfig.getParameter<edm::InputTag>("tagParticleFlow") ) )
+  tracksToken_    ( consumes< reco::TrackCollection >( iConfig.getParameter<edm::InputTag>( "tracksTag" ) ) ),
+  pflowToken_       ( consumes< reco::PFCandidateCollection >( iConfig.getParameter<edm::InputTag>("tagParticleFlow") ) ),
+  tokenGen_         ( consumes<reco::GenParticleCollection>(edm::InputTag("genParticles")) ),
+  tokenRecoProtons_ ( consumes <std::vector<reco::ProtonTrack>>(edm::InputTag("ctppsProtonReconstructionOFDB")))
+
 {
   
 
   //now do what ever initialization is needed
   outputFile_ = iConfig.getUntrackedParameter<std::string>("outfilename", "output.root");
   
+  isMC = iConfig.getParameter<bool>("isMC");
 	
   file = new TFile(outputFile_.c_str(), "recreate");
   file->cd();
@@ -73,36 +79,41 @@ Diamonds::analyze(const edm::Event& iEvent, const edm::EventSetup& iSetup)
   using namespace edm;
   //std::cout << "Beginning First init" << std::endl;
 
-  // get event data                                                                                                                                                                                
+  // get event data                                                                                                                                           
+
   edm::Handle< edm::DetSetVector<TotemVFATStatus> > diamondVFATStatus;
-  iEvent.getByToken( tokenStatus_, diamondVFATStatus );
-
   edm::Handle< edm::DetSetVector<CTPPSDiamondDigi> > diamondDigis;
-  iEvent.getByToken( tokenDigi_, diamondDigis );
-
   edm::Handle< std::vector<TotemFEDInfo> > fedInfo;
-  iEvent.getByToken( tokenFEDInfo_, fedInfo );
-
   edm::Handle< edm::DetSetVector<CTPPSDiamondRecHit> > diamondRecHits;
-  iEvent.getByToken( tokenDiamondHit_, diamondRecHits );
-
   edm::Handle< edm::DetSetVector<CTPPSDiamondLocalTrack> > diamondLocalTracks;
-  iEvent.getByToken( tokenDiamondTrack_, diamondLocalTracks );
-
   edm::Handle< edm::DetSetVector<TotemRPLocalTrack> > stripTracks;
-  iEvent.getByToken( tokenLocalTrack_, stripTracks );
-
   edm::Handle< edm::DetSetVector<CTPPSPixelDigi> > pixDigi;
-  iEvent.getByToken(tokenPixelDigi_, pixDigi);
-
   edm::Handle< edm::DetSetVector<CTPPSPixelCluster> > pixClusters;
-  iEvent.getByToken(tokenPixelCluster_, pixClusters);
-
   edm::Handle< edm::DetSetVector<CTPPSPixelRecHit> > pixRecHits;
-  iEvent.getByToken(tokenPixelRecHit_, pixRecHits);
-
   edm::Handle< edm::DetSetVector<CTPPSPixelLocalTrack> > pixLocalTracks;
-  iEvent.getByToken(tokenPixelLocalTrack_, pixLocalTracks);
+                                     
+  if(isMC == false)
+    {
+      iEvent.getByToken( tokenStatus_, diamondVFATStatus );
+      
+      iEvent.getByToken( tokenDigi_, diamondDigis );
+      
+      iEvent.getByToken( tokenFEDInfo_, fedInfo );
+      
+      iEvent.getByToken( tokenDiamondHit_, diamondRecHits );
+      
+      iEvent.getByToken( tokenDiamondTrack_, diamondLocalTracks );
+      
+      iEvent.getByToken( tokenLocalTrack_, stripTracks );
+
+      iEvent.getByToken(tokenPixelDigi_, pixDigi);
+
+      iEvent.getByToken(tokenPixelCluster_, pixClusters);
+
+      iEvent.getByToken(tokenPixelRecHit_, pixRecHits);
+
+      iEvent.getByToken(tokenPixelLocalTrack_, pixLocalTracks);
+    }
 
   edm::Handle< edm::View<reco::Vertex> > vertices;
   iEvent.getByToken( verticesToken_, vertices );
@@ -110,16 +121,21 @@ Diamonds::analyze(const edm::Event& iEvent, const edm::EventSetup& iSetup)
   edm::Handle<reco::PFJetCollection> pfjets;
   iEvent.getByToken( jetsToken_, pfjets );
 
+  edm::Handle<reco::TrackCollection> tks;
+  iEvent.getByToken(tracksToken_, tks);
+
   edm::Handle<reco::PFCandidateCollection> pflowColl;
   iEvent.getByToken(pflowToken_, pflowColl);
   const reco::PFCandidateCollection pfcand = *(pflowColl.product());
 
   // check validity                                                                                                                                                                                
   bool valid = true;
-  valid &= diamondVFATStatus.isValid();
-  valid &= diamondDigis.isValid();
-  valid &= fedInfo.isValid();
-
+  if(isMC == false)
+    {
+      valid &= diamondVFATStatus.isValid();
+      valid &= diamondDigis.isValid();
+      valid &= fedInfo.isValid();
+    }
 
   // First initialization of the variables
   
@@ -128,6 +144,9 @@ Diamonds::analyze(const edm::Event& iEvent, const edm::EventSetup& iSetup)
   Run = iEvent.id().run();
   LumiSection = iEvent.luminosityBlock();
   EventNum = iEvent.id().event();
+
+  nGenProtons = 0;
+  nProtons = 0;
 
   nArmsTiming = 0;
   nHitsTiming = 0;
@@ -148,12 +167,19 @@ Diamonds::analyze(const edm::Event& iEvent, const edm::EventSetup& iSetup)
   nArmsPixelTracks = 0;
   nPixelTracksArm1 = 0;
   nPixelTracksArm2 = 0;
+  nLiteTracks = 0;
 
   nVertices = 0;
+  nTracksNoVertex = 0;
+
   nJets = 0;
   nPFCand = 0;
   PFCentralY = 0;
   PFCentralMass = 0;
+  PFCentralMass_NoThresh = 0;
+  PFCentralY_NoThresh = 0;
+  PFCentralPx = 0; PFCentralPy = 0; PFCentralPz = 0; PFCentralE = 0;
+  PFCentralPx_NoThresh = 0; PFCentralPy_NoThresh = 0; PFCentralPz_NoThresh = 0; PFCentralE_NoThresh = 0;
   DijetMass = 0.0;
   DijetY = 0.0;
   nHFplus = 0;
@@ -214,6 +240,15 @@ Diamonds::analyze(const edm::Event& iEvent, const edm::EventSetup& iSetup)
       StripTrackY[i] = 0;
       StripTrackTx[i] = 0;
       StripTrackTy[i] = 0;
+
+      ProtonXi[i] = -999;
+      ProtonThY[i] = -999;
+      ProtonThX[i] = -999;
+      Protont[i] = -999;
+      ProtonIsMultiRP[i] = -999;
+      ProtonRPID[i] = -999;
+      ProtonArm[i] = -999;
+
     }
 
   for(int i = 0; i < 1000; i++)
@@ -230,6 +265,10 @@ Diamonds::analyze(const edm::Event& iEvent, const edm::EventSetup& iSetup)
       PixTrackChi2[i] = 0;
       PixTrackZ[i] = 0;
       PixTrackArm[i] = -1;
+      TrackZNoVertex[i] = 0;
+      TrackLiteX[i] = 0;
+      TrackLiteY[i] = 0;
+      TrackLiteRPID[i] = 0;
     }
 
   for(int i = 0; i < 100; i++)
@@ -248,277 +287,363 @@ Diamonds::analyze(const edm::Event& iEvent, const edm::EventSetup& iSetup)
   //      PFCandPhi[i] = 0;
   //    }
 
-  /* RecHits - timing */
-  for ( const auto& rechits_ds : *diamondRecHits ) {
-    const CTPPSDiamondDetId detidforrh( rechits_ds.detId() );
-    for ( const auto& rechit : rechits_ds ) {
-
-      TimingRecHitArm[nRecHitsTiming] = detidforrh.arm();
-      TimingRecHitChannel[nRecHitsTiming] = detidforrh.channel();      
-      TimingRecHitPlane[nRecHitsTiming] = detidforrh.plane();
-      TimingRecHitT[nRecHitsTiming] = rechit.getT();
-      TimingRecHitX[nRecHitsTiming] = rechit.getX();                                                                                                            
-      TimingRecHitY[nRecHitsTiming] = rechit.getY();                                                                                                            
-      TimingRecHitOOTIndex[nRecHitsTiming] = rechit.getOOTIndex();                                                                                              
-      TimingRecHitMultiHit[nRecHitsTiming] = rechit.getMultipleHits();
-      TimingRecHitToT[nRecHitsTiming] = rechit.getToT();
-      nRecHitsTiming++;
-    }
-  }
-
-
-  /* Diamond tracks */
-  for ( const auto& ds2 : *diamondLocalTracks ) 
+  for(int i = 0; i < 10; i++)
     {
-      for ( const auto& tr2 : ds2 ) 
-	{
-	  if ( ! tr2.isValid() ) continue;
-	  
-	  CTPPSDetId diamId2( ds2.detId() );
-	  unsigned int arm1 = diamId2.arm();
-
-	  //	  unsigned int arm2 = diamId2.arm();
-	  TimingTrackT[nTracksTiming] = tr2.getT();
-	  TimingTrackTErr[nTracksTiming] = tr2.getTSigma();
-	  TimingTrackX[nTracksTiming] = tr2.getX0();
-	  TimingTrackY[nTracksTiming] = tr2.getY0();
-	  TimingTrackZ[nTracksTiming] = tr2.getZ0();
-	  TimingTrackOOTIndex[nTracksTiming] = tr2.getOOTIndex();
-	  TimingTrackMultiHit[nTracksTiming] = tr2.getMultipleHits();
-	  TimingTrackChi2[nTracksTiming] = tr2.getChiSquared();
-	  TimingTrackArm[nTracksTiming] = arm1;
-
-	  nTracksTiming++;
-	}
+      GenProtXi[i] = 0;
+      GenProtPz[i] = 0;
     }
-
-  /* Digis - timing */
-  Channel = -1;                                                                                                                                    
-  Arm = -1;                                                                                                                                        
-  LE = 0;                                                                                                                                          
-  TE = 0;                                                                                                                                          
-  MH = 0;                                                                                                                                          
-
-  for ( const auto& digis : *diamondDigis ) {                                                                                                      
-    const CTPPSDiamondDetId detId( digis.detId() );                                                                                                
-    CTPPSDiamondDetId detId_pot( digis.detId() );                                                                                                  
-    for ( const auto& digi : digis ) {                                                                                                             
-      detId_pot.setPlane( 0 );                                                                                                                     
-      detId_pot.setChannel( 0 );                                                                                                                   
-
-      LE = digi.getLeadingEdge() * 0.025;                                                                                                          
-      TE = digi.getTrailingEdge() * 0.025;                                                                                                         
-
-      Channel = detId.channel();                                                                                                                   
-      MH = digi.getMultipleHit();                                                                                                                  
-      Arm = detId.arm();                                                                                                                           
-
-      // Clock
-      if(Channel != 30)
-	{
-	  ArmTiming[nHitsTiming] = Arm;                                                                                                            
-	  if(ArmTiming[nHitsTiming] == 0 && LE > 0)                                                                                                
-	    {                                                                                                                                       
-	      is45=1;                                                                                                                              
-	      if(detId.plane() == 0) layer1arm1 = 1;                                                                                               
-	      if(detId.plane() == 1) layer2arm1 = 1;                                                                                               
-	      if(detId.plane() == 2) layer3arm1 = 1;                                                                                               
-	      if(detId.plane() == 3) layer4arm1 = 1;                                                                                               
-	    }                                                                                                                                      
- 	  
-	  if(ArmTiming[nHitsTiming] == 1 && LE > 0)                                                                                                
-	    {                                                                                                                                      
-	      is56=1;                                                                                                                              
-	      if(detId.plane() == 0) layer1arm2 = 1;                                                                                               
-	      if(detId.plane() == 1) layer2arm2 = 1;                                                                                               
-	      if(detId.plane() == 2) layer3arm2 = 1;                                                                                               
-	      if(detId.plane() == 3) layer4arm2 = 1;                                                                                               
-	    }                                                                                                                                      
-	  
-	  ChannelTiming[nHitsTiming] = Channel;                                                                                                    
-	  PlaneTiming[nHitsTiming] = detId.plane();                                                                                                
-	  LeadingEdge[nHitsTiming] = LE;                                                                                                           
-             
-	  TrailingEdge[nHitsTiming] = TE;
-	  ToT[nHitsTiming] = TE - LE;
-	  MultiHit[nHitsTiming] = MH;
-	  //      OOTIndex[nHitsTiming] = rechit.getOOTIndex();                                                                                 
-
-	  nHitsTiming++;
-	}         
-    }
-  }                                                                                                                                                
   
-  nArmsTiming = is45+is56;
-  nlayersarm1 = layer1arm1 + layer2arm1 + layer3arm1 + layer4arm1;
-  nlayersarm2 = layer1arm2 + layer2arm2 + layer3arm2 + layer4arm2;
-  nLayersArm1Timing = nlayersarm1;
-  nLayersArm2Timing = nlayersarm2;
-
-  /* Strips */
-  for ( const auto& ds1 : *stripTracks ) {
-    for ( const auto& tr1 : ds1 ) {
-      if ( ! tr1.isValid() )  continue;
-
-      CTPPSDetId rpId1( ds1.detId() );
-      unsigned int arm1 = rpId1.arm();
-      unsigned int stNum1 = rpId1.station();
-      unsigned int rpNum1 = rpId1.rp();
-      if (stNum1 != 0 || ( rpNum1 != 2 && rpNum1 != 3 ) )  continue;
-
-      StripTrackX[nTracksStrips] = tr1.getX0();
-      StripTrackY[nTracksStrips] = tr1.getY0();
-      StripTrackTx[nTracksStrips] = tr1.getTx();
-      StripTrackTy[nTracksStrips] = tr1.getTy();
-      ArmStrips[nTracksStrips] = arm1;
-
-      if(arm1 == 0)
-	is45strips = 1;
-      if(arm1 == 1)
-	is56strips = 1;
-
-      nTracksStrips++;
-    }
-  }
-
-  nArmsStrips = is45strips+is56strips;
-
-  /* Pixel digis */
-  int pixelsarm1 = 0;
-  int pixelsarm2 = 0;
-  int planespixelsarm1 = 0;
-  int planespixelsarm2 = 0;
-
-  int is45pixels = 0;
-  int is56pixels = 0;
-  int prevplane1 = -1;
-  int prevplane2 = -1;
-
-  if(pixDigi.isValid())
+  if(isMC == false)
     {
-      for(const auto &ds_digi : *pixDigi)
-        {
-          int idet = (ds_digi.id>>DetId::kDetOffset)&0xF;
-          if(idet != DetId::VeryForward) {
-            continue;
-          }
-
-          int plane = ((ds_digi.id>>16)&0x7);
-
-          CTPPSDetId theId(ds_digi.id);
-          int pixelsarm = theId.arm()&0x1;
-
-          if(pixelsarm == 0)
-            {
-              if(plane != prevplane1)
-                {
-                  planespixelsarm1++;
-                  prevplane1 = plane;
-                }
-              pixelsarm1++;
-	      is45pixels = 1;
-            }
-          if(pixelsarm == 1)
-            {
-              if(plane != prevplane2)
-                {
-                  planespixelsarm2++;
-                  prevplane2 = plane;
-                }
-              pixelsarm2++;
-	      is56pixels = 1;
-            }
-	  //          int station = theId.station()&0x3;
-	  //          int rpot = theId.rp()&0x7;
-        }
-    }
-
-  nArmsPixelDigis = is45pixels + is56pixels; 
-  nLayersArm1PixelDigis = planespixelsarm1;
-  nLayersArm2PixelDigis = planespixelsarm2;
-
-  /* Pixel RecHits */
-  int pixelsrharm1 = 0;
-  int pixelsrharm2 = 0;
-  int planespixelsrharm1 = 0;
-  int planespixelsrharm2 = 0;
-
-  int is45pixelsrh = 0;
-  int is56pixelsrh = 0;
-  unsigned int pixelsrhprevplane1 = -1;
-  unsigned int pixelsrhprevplane2 = -1;
-
-  if(pixRecHits.isValid())
-    {
-      for ( const auto& rechits_px : *pixRecHits ) 
+      /* RecHits - timing */
+      for ( const auto& rechits_ds : *diamondRecHits ) {
+	const CTPPSDiamondDetId detidforrh( rechits_ds.detId() );
+	for ( const auto& rechit : rechits_ds ) {
+	  
+	  TimingRecHitArm[nRecHitsTiming] = detidforrh.arm();
+	  TimingRecHitChannel[nRecHitsTiming] = detidforrh.channel();      
+	  TimingRecHitPlane[nRecHitsTiming] = detidforrh.plane();
+	  TimingRecHitT[nRecHitsTiming] = rechit.getT();
+	  TimingRecHitX[nRecHitsTiming] = rechit.getX();                                                                                                            
+	  TimingRecHitY[nRecHitsTiming] = rechit.getY();                                                                                                            
+	  TimingRecHitOOTIndex[nRecHitsTiming] = rechit.getOOTIndex();                                                                                              
+	  TimingRecHitMultiHit[nRecHitsTiming] = rechit.getMultipleHits();
+	  TimingRecHitToT[nRecHitsTiming] = rechit.getToT();
+	  nRecHitsTiming++;
+	}
+      }
+      
+      /* Diamond tracks */
+      for ( const auto& ds2 : *diamondLocalTracks ) 
 	{
-	  const CTPPSPixelDetId pxDetid( rechits_px.detId() );
-	  for ( const auto& rechitpx : rechits_px ) 
+	  for ( const auto& tr2 : ds2 ) 
 	    {
-	      PixRecHitX[nPixelRecHits] = rechitpx.getPoint().x();
-	      PixRecHitY[nPixelRecHits] = rechitpx.getPoint().y();
-	      PixRecHitZ[nPixelRecHits] = rechitpx.getPoint().z();
-	      PixRecHitArm[nPixelRecHits] = pxDetid.arm();
-              PixRecHitPlane[nPixelRecHits] = pxDetid.plane();
-	      nPixelRecHits++;
-
-	      if(pxDetid.arm() == 0)
+	      if ( ! tr2.isValid() ) continue;
+	      
+	      CTPPSDetId diamId2( ds2.detId() );
+	      unsigned int arm1 = diamId2.arm();
+	      
+	      //	  unsigned int arm2 = diamId2.arm();
+	      TimingTrackT[nTracksTiming] = tr2.getT();
+	      TimingTrackTErr[nTracksTiming] = tr2.getTSigma();
+	      TimingTrackX[nTracksTiming] = tr2.getX0();
+	      TimingTrackY[nTracksTiming] = tr2.getY0();
+	      TimingTrackZ[nTracksTiming] = tr2.getZ0();
+	      TimingTrackOOTIndex[nTracksTiming] = tr2.getOOTIndex();
+	      TimingTrackMultiHit[nTracksTiming] = tr2.getMultipleHits();
+	      //	  TimingTrackChi2[nTracksTiming] = tr2.getChiSquared();
+	      TimingTrackArm[nTracksTiming] = arm1;
+	      
+	      nTracksTiming++;
+	    }
+	}
+      
+      /* Digis - timing */
+      Channel = -1;                                                                                                                                    
+      Arm = -1;                                                                                                                                        
+      LE = 0;                                                                                                                                          
+      TE = 0;                                                                                                                                          
+      MH = 0;                                                                                                                                          
+      
+      for ( const auto& digis : *diamondDigis ) {                                                                                                      
+	const CTPPSDiamondDetId detId( digis.detId() );                                                                                                
+	CTPPSDiamondDetId detId_pot( digis.detId() );                                                                                                  
+	for ( const auto& digi : digis ) {                                                                                                             
+	  detId_pot.setPlane( 0 );                                                                                                                     
+	  detId_pot.setChannel( 0 );                                                                                                                   
+	  
+	  LE = digi.getLeadingEdge() * 0.025;                                                                                                          
+	  TE = digi.getTrailingEdge() * 0.025;                                                                                                         
+	  
+	  Channel = detId.channel();                                                                                                                   
+	  MH = digi.getMultipleHit();                                                                                                                  
+	  Arm = detId.arm();                                                                                                                           
+	  
+	  // Clock
+	  if(Channel != 30)
+	    {
+	      ArmTiming[nHitsTiming] = Arm;                                                                                                            
+	      if(ArmTiming[nHitsTiming] == 0 && LE > 0)                                                                                                
+		{                                                                                                                                       
+		  is45=1;                                                                                                                              
+		  if(detId.plane() == 0) layer1arm1 = 1;                                                                                               
+		  if(detId.plane() == 1) layer2arm1 = 1;                                                                                               
+		  if(detId.plane() == 2) layer3arm1 = 1;                                                                                               
+		  if(detId.plane() == 3) layer4arm1 = 1;                                                                                               
+		}                                                                                                                                      
+	      
+	      if(ArmTiming[nHitsTiming] == 1 && LE > 0)                                                                                                
+		{                                                                                                                                      
+		  is56=1;                                                                                                                              
+		  if(detId.plane() == 0) layer1arm2 = 1;                                                                                               
+		  if(detId.plane() == 1) layer2arm2 = 1;                                                                                               
+		  if(detId.plane() == 2) layer3arm2 = 1;                                                                                               
+		  if(detId.plane() == 3) layer4arm2 = 1;                                                                                               
+		}                                                                                                                                      
+	      
+	      ChannelTiming[nHitsTiming] = Channel;                                                                                                    
+	      PlaneTiming[nHitsTiming] = detId.plane();                                                                                                
+	      LeadingEdge[nHitsTiming] = LE;                                                                                                           
+	      
+	      TrailingEdge[nHitsTiming] = TE;
+	      ToT[nHitsTiming] = TE - LE;
+	      MultiHit[nHitsTiming] = MH;
+	      //      OOTIndex[nHitsTiming] = rechit.getOOTIndex();                                                                                 
+	      
+	      nHitsTiming++;
+	    }         
+	}
+      }                                                                                                                                                
+      
+      nArmsTiming = is45+is56;
+      nlayersarm1 = layer1arm1 + layer2arm1 + layer3arm1 + layer4arm1;
+      nlayersarm2 = layer1arm2 + layer2arm2 + layer3arm2 + layer4arm2;
+      nLayersArm1Timing = nlayersarm1;
+      nLayersArm2Timing = nlayersarm2;
+      
+      /* Strips */
+      for ( const auto& ds1 : *stripTracks ) {
+	for ( const auto& tr1 : ds1 ) {
+	  if ( ! tr1.isValid() )  continue;
+	  
+	  CTPPSDetId rpId1( ds1.detId() );
+	  unsigned int arm1 = rpId1.arm();
+	  unsigned int stNum1 = rpId1.station();
+	  unsigned int rpNum1 = rpId1.rp();
+	  if (stNum1 != 0 || ( rpNum1 != 2 && rpNum1 != 3 ) )  continue;
+	  
+	  StripTrackX[nTracksStrips] = tr1.getX0();
+	  StripTrackY[nTracksStrips] = tr1.getY0();
+	  StripTrackTx[nTracksStrips] = tr1.getTx();
+	  StripTrackTy[nTracksStrips] = tr1.getTy();
+	  ArmStrips[nTracksStrips] = arm1;
+	  
+	  if(arm1 == 0)
+	    is45strips = 1;
+	  if(arm1 == 1)
+	    is56strips = 1;
+	  
+	  nTracksStrips++;
+	}
+      }
+      
+      nArmsStrips = is45strips+is56strips;
+      
+      /* Pixel digis */
+      int pixelsarm1 = 0;
+      int pixelsarm2 = 0;
+      int planespixelsarm1 = 0;
+      int planespixelsarm2 = 0;
+      
+      int is45pixels = 0;
+      int is56pixels = 0;
+      int prevplane1 = -1;
+      int prevplane2 = -1;
+      
+      if(pixDigi.isValid())
+	{
+	  for(const auto &ds_digi : *pixDigi)
+	    {
+	      int idet = (ds_digi.id>>DetId::kDetOffset)&0xF;
+	      if(idet != DetId::VeryForward) {
+		continue;
+	      }
+	      
+	      int plane = ((ds_digi.id>>16)&0x7);
+	      
+	      CTPPSDetId theId(ds_digi.id);
+	      int pixelsarm = theId.arm()&0x1;
+	      
+	      if(pixelsarm == 0)
 		{
-		  if(pxDetid.plane() != pixelsrhprevplane1)
+		  if(plane != prevplane1)
 		    {
-		      planespixelsrharm1++;
-		      pixelsrhprevplane1 = pxDetid.plane();
+		      planespixelsarm1++;
+		      prevplane1 = plane;
 		    }
-		  pixelsrharm1++;
-		  is45pixelsrh = 1;
+		  pixelsarm1++;
+		  is45pixels = 1;
 		}
-	      if(pxDetid.arm() == 1)
+	      if(pixelsarm == 1)
 		{
-		  if(pxDetid.plane() != pixelsrhprevplane2)
+		  if(plane != prevplane2)
 		    {
-		      planespixelsrharm2++;
-		      pixelsrhprevplane2 = pxDetid.plane();
+		      planespixelsarm2++;
+		      prevplane2 = plane;
 		    }
-		  pixelsrharm2++;
-		  is56pixelsrh = 1;
+		  pixelsarm2++;
+		  is56pixels = 1;
+		}
+	      //          int station = theId.station()&0x3;
+	      //          int rpot = theId.rp()&0x7;
+	    }
+	}
+      
+      nArmsPixelDigis = is45pixels + is56pixels; 
+      nLayersArm1PixelDigis = planespixelsarm1;
+      nLayersArm2PixelDigis = planespixelsarm2;
+      
+      /* Pixel RecHits */
+      int pixelsrharm1 = 0;
+      int pixelsrharm2 = 0;
+      int planespixelsrharm1 = 0;
+      int planespixelsrharm2 = 0;
+      
+      int is45pixelsrh = 0;
+      int is56pixelsrh = 0;
+      unsigned int pixelsrhprevplane1 = -1;
+      unsigned int pixelsrhprevplane2 = -1;
+      
+      if(pixRecHits.isValid())
+	{
+	  for ( const auto& rechits_px : *pixRecHits ) 
+	    {
+	      const CTPPSPixelDetId pxDetid( rechits_px.detId() );
+	      for ( const auto& rechitpx : rechits_px ) 
+		{
+		  PixRecHitX[nPixelRecHits] = rechitpx.getPoint().x();
+		  PixRecHitY[nPixelRecHits] = rechitpx.getPoint().y();
+		  PixRecHitZ[nPixelRecHits] = rechitpx.getPoint().z();
+		  PixRecHitArm[nPixelRecHits] = pxDetid.arm();
+		  PixRecHitPlane[nPixelRecHits] = pxDetid.plane();
+		  nPixelRecHits++;
+		  
+		  if(pxDetid.arm() == 0)
+		    {
+		      if(pxDetid.plane() != pixelsrhprevplane1)
+			{
+			  planespixelsrharm1++;
+			  pixelsrhprevplane1 = pxDetid.plane();
+			}
+		      pixelsrharm1++;
+		      is45pixelsrh = 1;
+		    }
+		  if(pxDetid.arm() == 1)
+		    {
+		      if(pxDetid.plane() != pixelsrhprevplane2)
+			{
+			  planespixelsrharm2++;
+			  pixelsrhprevplane2 = pxDetid.plane();
+			}
+		      pixelsrharm2++;
+		      is56pixelsrh = 1;
+		    }
 		}
 	    }
 	}
+      
+      nArmsPixRecHits = is45pixelsrh + is56pixelsrh;
+      nLayersArm1PixRecHits = planespixelsrharm1;
+      nLayersArm2PixRecHits = planespixelsrharm2;
+      
+      /* Pixel tracks */
+      for ( const auto& dspxtr1 : *pixLocalTracks ) {
+	for ( const auto& pxtr1 : dspxtr1 ) {
+	  if ( ! pxtr1.isValid() )  continue;
+	  
+	  CTPPSDetId pxrpId1( dspxtr1.detId() );
+	  unsigned int pxarm1 = pxrpId1.arm();
+	  
+	  std::cout << "Pixel track detId = " << (int)dspxtr1.detId() << std::endl;
+	  std::cout << "Pixel track z = " << pxtr1.getZ0() << std::endl;
+	  
+	  PixTrackX[nPixelTracks] = pxtr1.getX0();
+	  PixTrackY[nPixelTracks] = pxtr1.getY0();
+	  PixTrackTx[nPixelTracks] = pxtr1.getTx();
+	  PixTrackTy[nPixelTracks] = pxtr1.getTy();
+	  PixTrackChi2[nPixelTracks] = pxtr1.getChiSquared();
+	  PixTrackZ[nPixelTracks] = pxtr1.getZ0();
+	  PixTrackArm[nPixelTracks] = pxarm1;
+	  
+	  if(pxarm1 == 0)
+	    nPixelTracksArm1++;
+	  if(pxarm1 == 1)
+	    nPixelTracksArm2++;
+	  
+	  nPixelTracks++;
+	}
+      }
+      
+      nArmsPixelTracks = (nPixelTracksArm1 > 0) + (nPixelTracksArm2 > 0);
     }
 
-  nArmsPixRecHits = is45pixelsrh + is56pixelsrh;
-  nLayersArm1PixRecHits = planespixelsrharm1;
-  nLayersArm2PixRecHits = planespixelsrharm2;
+  /* Lite tracks */
+  // Proton lite tracks                                                                                                                                      
+  edm::Handle<std::vector<CTPPSLocalTrackLite> > ppsTracksLite;
+  iEvent.getByToken( pps_tracklite_token_, ppsTracksLite );
 
-  /* Pixel tracks */
-  for ( const auto& dspxtr1 : *pixLocalTracks ) {
-    for ( const auto& pxtr1 : dspxtr1 ) {
-      if ( ! pxtr1.isValid() )  continue;
+  for ( const auto& trklite : *ppsTracksLite )
+    {
+      const CTPPSDetId detid( trklite.getRPId() );
 
-      CTPPSDetId pxrpId1( dspxtr1.detId() );
-      unsigned int pxarm1 = pxrpId1.arm();
-
-      PixTrackX[nPixelTracks] = pxtr1.getX0();
-      PixTrackY[nPixelTracks] = pxtr1.getY0();
-      PixTrackTx[nPixelTracks] = pxtr1.getTx();
-      PixTrackTy[nPixelTracks] = pxtr1.getTy();
-      PixTrackChi2[nPixelTracks] = pxtr1.getChiSquared();
-      PixTrackZ[nPixelTracks] = pxtr1.getZ0();
-      PixTrackArm[nPixelTracks] = pxarm1;
-
-      if(pxarm1 == 0)
-	nPixelTracksArm1++;
-      if(pxarm1 == 1)
-	nPixelTracksArm2++;
-
-      nPixelTracks++;
+      // transform the raw, 32-bit unsigned integer detId into the TOTEM "decimal" notation                                                                  
+      const unsigned short raw_id = 100*detid.arm()+10*detid.station()+detid.rp();
+      
+      std::cout << "\tLite track with x, y, ID = " << trklite.getX() << ", " << trklite.getY() << ", " << raw_id << std::endl;
+      TrackLiteX[nLiteTracks] = trklite.getX();
+      TrackLiteY[nLiteTracks] = trklite.getY();
+      TrackLiteRPID[nLiteTracks] = raw_id;
+      std::cout << "\t\tFilled arrays with x, y, ID = " << TrackLiteX[nLiteTracks] << ", " << TrackLiteY[nLiteTracks] << ", " 
+		<< TrackLiteRPID[nLiteTracks] << std::endl;
+      nLiteTracks++;
     }
-  }
 
-  nArmsPixelTracks = (nPixelTracksArm1 > 0) + (nPixelTracksArm2 > 0);
+  /* Full Reco protons */
+  edm::Handle<std::vector<reco::ProtonTrack>> recoProtons;
+  iEvent.getByToken(tokenRecoProtons_, recoProtons);
+
+  // make single-RP-reco plots                                                                                                                                               
+  for (const auto & proton : *recoProtons)
+    {
+      int ismultirp = -999;
+      unsigned int decRPId = -999;
+      unsigned int armId = -999;
+      float th_y = -999;
+      float th_x = -999;
+      float t = -999;
+      float xi = -999;
+
+      if (proton.valid())
+	{
+	  th_y = (proton.direction().y()) / (proton.direction().mag());
+	  th_x = (proton.direction().x()) / (proton.direction().mag());
+	  xi = proton.xi();
+
+	  // t                                                                                                                                                                                   
+	  const double m = 0.938; // GeV                                                                                                                                                         
+	  const double p = 6500.; // GeV                                                                                                                                                         
+
+	  float t0 = 2.*m*m + 2.*p*p*(1.-xi) - 2.*sqrt( (m*m + p*p) * (m*m + p*p*(1.-xi)*(1.-xi)) );
+	  float th = sqrt(th_x * th_x + th_y * th_y);
+	  float S = sin(th/2.);
+	  t = t0 - 4. * p*p * (1.-xi) * S*S;
+
+	  if (proton.method == reco::ProtonTrack::rmSingleRP)
+	    {
+	      CTPPSDetId rpId(* proton.contributingRPIds.begin());
+	      decRPId = rpId.arm()*100 + rpId.station()*10 + rpId.rp();
+	      ismultirp = 0;
+	    }
+	  if (proton.method == reco::ProtonTrack::rmMultiRP)
+	    {
+	      CTPPSDetId rpId(* proton.contributingRPIds.begin());
+	      armId = rpId.arm();
+	      ismultirp = 1;
+	    }
+
+	  ProtonXi[nProtons] = proton.xi();
+          ProtonThX[nProtons] = th_x;
+          ProtonThY[nProtons] = th_y;
+          Protont[nProtons] = t;
+          ProtonIsMultiRP[nProtons] = ismultirp;
+	  ProtonRPID[nProtons] = decRPId;
+	  ProtonArm[nProtons] = armId;
+	  nProtons++;
+	}
+    }
 
   /* Primary vertices */
-  for ( const auto& vtx : *vertices ) {                                                                                                                                        
+  for ( const auto& vtx : *vertices ) {                                                                           
     PrimVertexZ[nVertices] = vtx.z();
     if(vtx.isFake() == 1)
       PrimVertexIsBS[nVertices] = 1;
@@ -527,6 +652,15 @@ Diamonds::analyze(const edm::Event& iEvent, const edm::EventSetup& iSetup)
     nVertices++;
   }
 
+  /* Tracks if no real vertex found */
+  if((nVertices <= 1) && (PrimVertexIsBS[0] == 1))
+    {
+      for( const auto& tk : *tks )
+	{
+	  TrackZNoVertex[nTracksNoVertex] = tk.vertex().z();
+	  nTracksNoVertex++;
+	}
+    }
 
   /* Jets */
   for(reco::PFJetCollection::const_iterator it=pfjets->begin(); it!=pfjets->end(); ++it) {
@@ -552,9 +686,15 @@ Diamonds::analyze(const edm::Event& iEvent, const edm::EventSetup& iSetup)
   TLorentzVector particle, central;
   central.SetPxPyPzE(0,0,0,0);
 
+  TLorentzVector particlenothresh, centralnothresh;
+  centralnothresh.SetPxPyPzE(0,0,0,0);
+
   for(reco::PFCandidateCollection::const_iterator pflow=pfcand.begin(); pflow!=pfcand.end(); pflow++) {
     int pid = pflow->particleId();
     float pfe = pflow->energy();
+
+    particlenothresh.SetPxPyPzE(pflow->px(),pflow->py(),pflow->pz(),pflow->energy());
+    centralnothresh = centralnothresh + particlenothresh;
 
     if(pid == 6 && pfe < 4.0)
       continue;
@@ -595,6 +735,35 @@ Diamonds::analyze(const edm::Event& iEvent, const edm::EventSetup& iSetup)
 
   PFCentralMass = central.M();
   PFCentralY = central.Rapidity();
+  PFCentralE = central.E();
+  PFCentralPx = central.Px();
+  PFCentralPy = central.Py();
+  PFCentralPz = central.Pz();
+
+  PFCentralMass_NoThresh = centralnothresh.M();
+  PFCentralY_NoThresh = centralnothresh.Rapidity();
+  PFCentralE_NoThresh = centralnothresh.E();
+  PFCentralPx_NoThresh = centralnothresh.Px();
+  PFCentralPy_NoThresh = centralnothresh.Py();
+  PFCentralPz_NoThresh = centralnothresh.Pz();
+
+  /*
+  edm::Handle<reco::GenParticleCollection> genP;
+  iEvent.getByLabel("genParticles",genP);
+  
+  for (reco::GenParticleCollection::const_iterator mcIter=genP->begin(); mcIter != genP->end(); mcIter++ ) 
+    {
+      if(mcIter->status() == 1)
+	{
+	  if((mcIter->pdgId() == 2212) && (fabs(mcIter->pz()) > 3000))
+	    {
+	      GenProtXi[nGenProtons]=((6500.0-mcIter->energy())/6500.0);
+	      GenProtPz[nGenProtons]=mcIter->pz();
+	      nGenProtons++;
+	    }
+	}
+    }
+  */
 
   tree->Fill();
 }
@@ -680,6 +849,10 @@ Diamonds::beginJob()
   tree->Branch("PixTrackArm", &PixTrackArm, "PixTrackArm[nPixelTracks]/I");
   tree->Branch("nArmsStrips", &nArmsStrips, "nArmsStrips/I");
 
+  tree->Branch("nLiteTracks", &nLiteTracks, "nLiteTracks/I");
+  tree->Branch("TrackLiteX", &TrackLiteX, "TrackLiteX[nLiteTracks]/F");
+  tree->Branch("TrackLiteY", &TrackLiteY, "TrackLiteY[nLiteTracks]/F");
+  tree->Branch("TrackLiteRPID", &TrackLiteRPID, "TrackLiteRPID[nLiteTracks]/I");
 
   tree->Branch("PrimVertexZ", &PrimVertexZ, "PrimVertexZ[nVertices]/D");
   tree->Branch("PrimVertexIsBS", &PrimVertexIsBS, "PrimVertexIsBS[nVertices]/I");
@@ -692,6 +865,9 @@ Diamonds::beginJob()
   tree->Branch("DijetMass", &DijetMass, "DijetMass/D");
   tree->Branch("DijetY", &DijetY, "DijetY/D");
 
+  tree->Branch("nTracksNoVertex", &nTracksNoVertex, "nTracksNoVertex/I");
+  tree->Branch("TrackZNoVertex", &TrackZNoVertex, "TrackZNoVertex[nTracksNoVertex]/D");
+
   //  tree->Branch("nPFCand", &nPFCand, "nPFCand/I");
   //  tree->Branch("PFCandID", &PFCandID, "PFCandID[nPFCand]/I");
   //  tree->Branch("PFCandE", &PFCandE, "PFCandE[nPFCand]/D");
@@ -703,7 +879,30 @@ Diamonds::beginJob()
   tree->Branch("HFminusE", &HFminusE, "HFminusE/D");
 
   tree->Branch("PFCentralMass", &PFCentralMass, "PFCentralMass/D");
+  tree->Branch("PFCentralMass_NoThresh", &PFCentralMass_NoThresh, "PFCentralMass_NoThresh/D");
+  tree->Branch("PFCentralE", &PFCentralE, "PFCentralE/D");
+  tree->Branch("PFCentralE_NoThresh", &PFCentralE_NoThresh, "PFCentralE_NoThresh/D");
+  tree->Branch("PFCentralPx", &PFCentralPx, "PFCentralPx/D");
+  tree->Branch("PFCentralPx_NoThresh", &PFCentralPx_NoThresh, "PFCentralPx_NoThresh/D");
+  tree->Branch("PFCentralPy", &PFCentralPy, "PFCentralPy/D");
+  tree->Branch("PFCentralPy_NoThresh", &PFCentralPy_NoThresh, "PFCentralPy_NoThresh/D");
+  tree->Branch("PFCentralPz", &PFCentralPz, "PFCentralPz/D");
+  tree->Branch("PFCentralPz_NoThresh", &PFCentralPz_NoThresh, "PFCentralPz_NoThresh/D");
   tree->Branch("PFCentralY", &PFCentralY, "PFCentralY/D");
+  tree->Branch("PFCentralY_NoThresh", &PFCentralY_NoThresh, "PFCentralY_NoThresh/D");
+
+  tree->Branch("nGenProtons", &nGenProtons, "nGenProtons/I");
+  tree->Branch("GenProtXi", &GenProtXi, "GenProtXi[nGenProtons]/F");
+  tree->Branch("GenProtPz", &GenProtPz, "GenProtPz[nGenProtons]/F");
+
+  tree->Branch("nProtons", &nProtons, "nProtons/I");
+  tree->Branch("ProtonXi", &ProtonXi, "ProtonXi[nProtons]/F");
+  tree->Branch("ProtonThX", &ProtonThX, "ProtonThX[nProtons]/F");
+  tree->Branch("ProtonThY", &ProtonThY, "ProtonThY[nProtons]/F");
+  tree->Branch("Protont", &Protont, "Protont[nProtons]/F");
+  tree->Branch("ProtonIsMultiRP", &ProtonIsMultiRP, "ProtonIsMultiRP[nProtons]/I");
+  tree->Branch("ProtonRPID", &ProtonRPID, "ProtonRPID[nProtons]/I");
+  tree->Branch("ProtonArm", &ProtonArm, "ProtonArm[nProtons]/I");
 }
 
 // ------------ method called once each job just after ending the event loop  ------------
