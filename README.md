@@ -1,48 +1,36 @@
-<b>Instructions for running ntuple-maker with new diamond unpacking+mapping, and pixels reco:</b>
+<b>Instructions for running ntuple-makers with new diamond unpacking+mapping, and pixels reco:</b>
+
+Analyzers for studies of strips radiation damage efficiency, diamonds timing in Low-PU data, y* reconstruction/optics in Low-PU data
 
 [forked from https://github.com/dfigueiredo/CTPPSDiamondAnalyzer - see there for instructions to run the 
-other monitor/skimming code]
+original monitor/skimming code]
 
 ---------------------------------------------------------------
-CMSSW_9_4_X with pixel tracks (9_4_0_pre2 or later)
+CMSSW_10_2_X 
 ---------------------------------------------------------------
-cmsrel CMSSW_9_4_0_pre2
+cmsrel CMSSW_10_2_13
 
-cd CMSSW_9_4_0_pre2
+cd CMSSW_10_2_13
 
 cmsenv
 
-git cms-init
-
-git clone https://github.com/jjhollar/CTPPSDiamondAnalyzer.git
-
-scram b -j 8
-
-cd CTPPSDiamondAnalyzer/LowPUTimingAnalysis/test
-
-cmsRun zb10_ntuple_diamond_rereco_test_cfg.py
-
----------------------------------------------------------------
-CMSSW_9_2_X
----------------------------------------------------------------
-cmsrel CMSSW_9_2_8
-
-cd CMSSW_9_2_8/src
-
-cmsenv 
+-> Follow the recipe to setup the standard proton reconstruction for 10_2_X https://twiki.cern.ch/twiki/bin/viewauth/CMS/CTPPSStandardProtonReconstruction
+   (this is necessary until the reco is integrated in 10_6_X for the legacy re-RECO)
 
 git cms-init
 
-git cms-merge-topic 19991
-
-cp ~fabferro/WORKSPACE/public/92x_201708012300.tgz .
-
-tar -xzvf 92x_201708012300.tgz
-
-git clone https://github.com/jjhollar/CTPPSDiamondAnalyzer.git
+git clone https://github.com/jjhollar/CTPPSDiamondsStripsAnalyzer.git
 
 scram b -j 8
 
-cd CTPPSDiamondAnalyzer/LowPUTimingAnalysis/test
+      *** To make ntuples on low-PU data with information for timing studies, y* reconstruction studies, etc.
 
-cmsRun zb10_ntuple_diamond_rereco_test_cfg.py
+            cd CTPPSDiamondsStripsAnalyzer/LowPUTimingAnalysis/test/
+
+      	    cmsRun zb10_ntuple_diamond_rereco_test_cfg.py
+
+      *** To make ntuples for strips radiation damage studies
+
+      	    cd CTPPSDiamondsStripsAnalyzer/StripsEfficiency/test/
+
+	    cmsRun RunEfficiency_cfg.py
