@@ -47,18 +47,19 @@ process.source = cms.Source("EmptyIOVSource",
 process.SimpleMemoryCheck = cms.Service("SimpleMemoryCheck",ignoreTotal = cms.untracked.int32(1) )
 
 
-from CTPPSDiamondsStripsAnalyzer.LowPUTimingAnalysis.InputFiles_cff import readFiles
+#from CTPPSDiamondAnalyzer.LowPUTimingAnalysis.MCInputFiles_cff import readFiles
+#from CTPPSDiamondAnalyzer.LowPUTimingAnalysis.ZeroBias_319488_cff import readFiles
+#from CTPPSDiamondAnalyzer.LowPUTimingAnalysis.InputFiles_cff import readFiles
 
-process.source = cms.Source ("PoolSource",fileNames = cms.untracked.vstring(readFiles))
-# For 2-file solution to rerun from RAW
+#process.source = cms.Source ("PoolSource",fileNames = cms.untracked.vstring(readFiles))
 #process.source.secondaryFileNames = cms.untracked.vstring(secReadFiles)
 
-# For individual input files
-#process.source = cms.Source ("PoolSource",
-#                             fileNames = cms.untracked.vstring(
-#'file:/tmp/jjhollar/'
-#        )
-#                             )
+process.source = cms.Source ("PoolSource",
+                             fileNames = cms.untracked.vstring(
+'/store/data/Run2017C/ZeroBias1/AOD/PromptReco-v2/000/300/088/00000/E4BF515D-1077-E711-BFA8-02163E014222.root'
+#'file:/tmp/jjhollar/ctppsSim_MB_QGSJet_xangle150_divergence30.root'
+        )
+                             )
 
 process.load("RecoCTPPS.ProtonReconstruction.year_2017_OF.ctppsProtonReconstructionOF_cfi")
 #process.load("RecoCTPPS.ProtonReconstruction.year_2018_OFDB.ctppsProtonReconstructionOFDB_cfi")                                                                                  
@@ -94,11 +95,12 @@ process.mydiamonds = cms.EDAnalyzer(
     tagRPixDigi = cms.InputTag( "ctppsPixelDigis" ),
     tagRPixCluster = cms.InputTag( "ctppsPixelClusters" ),
     tagRPixRecHit = cms.InputTag( "ctppsPixelRecHits" ),
-    tagRPixLocalTrack = cms.InputTag( "ctppsPixelLocalTracks" ),
+    tagRPixLocalTrack = cms.InputTag( "ctppsPixelLocalTracks", "", "CTPPS2" ),
     tagTrackLites = cms.InputTag( "ctppsLocalTrackLiteProducer", "", "CTPPS2"),
 #    tagTrackLites = cms.InputTag( "ctppsLocalTrackLiteProducer"),
     tagRecoProtons = cms.InputTag( "ctppsProtonReconstructionOFDB"),
     outfilename = cms.untracked.string( "output_ZeroBias.root" ),
+#    outfilename = cms.untracked.string( "output_CD_MBR.root" ),
     isMC = cms.bool(False)
 )
 
@@ -113,11 +115,11 @@ process.mydiamonds.isLowPU = cms.bool(True)
 process.load("RecoCTPPS.Configuration.recoCTPPS_sequences_cff")
 from Geometry.VeryForwardGeometry.geometryRPFromDB_cfi import *
 process.load("Geometry.VeryForwardGeometry.geometryRPFromDB_cfi")
-#process.load("RecoCTPPS.PixelLocal.ctppsPixelLocalReconstruction_cff")
+process.load("RecoCTPPS.PixelLocal.ctppsPixelLocalReconstruction_cff")
 process.ctppsLocalTrackLiteProducer.tagPixelTrack = cms.InputTag("ctppsPixelLocalTracks","","CTPPS2")
 process.ctppsLocalTrackLiteProducer.doNothing = cms.bool(False)
-# For March 2019 re-reco from AOD
-#process.ctppsProtonReconstructionOFDB.tagLocalTrackLite = cms.InputTag("ctppsLocalTrackLiteProducer","","CTPPS2")
+# March 2019 re-reco from AOD
+process.ctppsProtonReconstructionOFDB.tagLocalTrackLite = cms.InputTag("ctppsLocalTrackLiteProducer","","CTPPS2")
 
 ############
 #process.o1 = cms.OutputModule("PoolOutputModule",
@@ -136,10 +138,10 @@ process.ALL = cms.Path(
 #    process.recoCTPPS * 
 #
 # March 2019 re-reco from AOD
-#    process.ctppsPixelClusters *
-#    process.ctppsPixelRecHits *
-#    process.ctppsPixelLocalTracks *
-#    process.ctppsLocalTrackLiteProducer * 
+    process.ctppsPixelClusters *
+    process.ctppsPixelRecHits *
+    process.ctppsPixelLocalTracks *
+    process.ctppsLocalTrackLiteProducer * 
 #
 #   for data:
     process.ctppsProtonReconstructionOFDB *
