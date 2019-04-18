@@ -38,7 +38,7 @@ Diamonds::Diamonds(const edm::ParameterSet& iConfig) :
   tracksToken_    ( consumes< reco::TrackCollection >( iConfig.getParameter<edm::InputTag>( "tracksTag" ) ) ),
   pflowToken_       ( consumes< reco::PFCandidateCollection >( iConfig.getParameter<edm::InputTag>("tagParticleFlow") ) ),
   tokenGen_         ( consumes<reco::GenParticleCollection>(edm::InputTag("genParticles")) ),
-  tokenRecoProtons_ ( consumes <std::vector<reco::ProtonTrack>>(edm::InputTag("ctppsProtonReconstructionOFDB")))
+  tokenRecoProtons_ ( consumes <std::vector<reco::ProtonTrack>>( iConfig.getParameter<edm::InputTag>("tagRecoProtons") ) )
 
 {
   
@@ -206,6 +206,8 @@ Diamonds::analyze(const edm::Event& iEvent, const edm::EventSetup& iSetup)
   for(int i = 0; i < 100; i++)
     {
       PrimVertexZ[i] = -999.;
+      PrimVertexX[i] = -999.;
+      PrimVertexY[i] = -999.;
       PrimVertexIsBS[i] = -999;
       ArmTiming[i] = -1;
       LeadingEdge[i] = 0;
@@ -645,6 +647,9 @@ Diamonds::analyze(const edm::Event& iEvent, const edm::EventSetup& iSetup)
   /* Primary vertices */
   for ( const auto& vtx : *vertices ) {                                                                           
     PrimVertexZ[nVertices] = vtx.z();
+    PrimVertexX[nVertices] = vtx.x();
+    PrimVertexY[nVertices] = vtx.y();
+
     if(vtx.isFake() == 1)
       PrimVertexIsBS[nVertices] = 1;
     else
@@ -747,23 +752,24 @@ Diamonds::analyze(const edm::Event& iEvent, const edm::EventSetup& iSetup)
   PFCentralPy_NoThresh = centralnothresh.Py();
   PFCentralPz_NoThresh = centralnothresh.Pz();
 
-  /*
-  edm::Handle<reco::GenParticleCollection> genP;
-  iEvent.getByLabel("genParticles",genP);
-  
-  for (reco::GenParticleCollection::const_iterator mcIter=genP->begin(); mcIter != genP->end(); mcIter++ ) 
-    {
-      if(mcIter->status() == 1)
-	{
-	  if((mcIter->pdgId() == 2212) && (fabs(mcIter->pz()) > 3000))
-	    {
-	      GenProtXi[nGenProtons]=((6500.0-mcIter->energy())/6500.0);
-	      GenProtPz[nGenProtons]=mcIter->pz();
-	      nGenProtons++;
-	    }
-	}
-    }
-  */
+    if(isMC == true)
+      {
+	edm::Handle<reco::GenParticleCollection> genP;
+	iEvent.getByLabel("genParticles",genP);
+	
+	for (reco::GenParticleCollection::const_iterator mcIter=genP->begin(); mcIter != genP->end(); mcIter++ ) 
+	  {
+	    if(mcIter->status() == 1)
+	      {
+		if((mcIter->pdgId() == 2212) && (fabs(mcIter->pz()) > 3000))
+		  {
+		    GenProtXi[nGenProtons]=((6500.0-mcIter->energy())/6500.0);
+		    GenProtPz[nGenProtons]=mcIter->pz();
+		    nGenProtons++;
+		  }
+	      }
+	  }
+      }
 
   tree->Fill();
 }
@@ -855,6 +861,8 @@ Diamonds::beginJob()
   tree->Branch("TrackLiteRPID", &TrackLiteRPID, "TrackLiteRPID[nLiteTracks]/I");
 
   tree->Branch("PrimVertexZ", &PrimVertexZ, "PrimVertexZ[nVertices]/D");
+  tree->Branch("PrimVertexX", &PrimVertexX, "PrimVertexX[nVertices]/D");
+  tree->Branch("PrimVertexY", &PrimVertexY, "PrimVertexY[nVertices]/D");
   tree->Branch("PrimVertexIsBS", &PrimVertexIsBS, "PrimVertexIsBS[nVertices]/I");
 
   tree->Branch("nJets", &nJets, "nJets/I");

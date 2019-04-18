@@ -26,10 +26,6 @@ process.verbosity = cms.untracked.PSet(
     input = cms.untracked.int32(1)
 )
 
-#process.load("test_base_cff")
-#from test_base_cff import *
-
-
 # minimum of logs
 process.MessageLogger = cms.Service("MessageLogger",
 #    statistics = cms.untracked.vstring(),
@@ -51,26 +47,33 @@ process.source = cms.Source("EmptyIOVSource",
 process.SimpleMemoryCheck = cms.Service("SimpleMemoryCheck",ignoreTotal = cms.untracked.int32(1) )
 
 
-#from CTPPSDiamondAnalyzer.LowPUTimingAnalysis.MCInputFiles_cff import readFiles
-#from CTPPSDiamondAnalyzer.LowPUTimingAnalysis.ZeroBias_319488_cff import readFiles
-from CTPPSDiamondAnalyzer.LowPUTimingAnalysis.InputFiles_cff import readFiles
+from CTPPSDiamondsStripsAnalyzer.LowPUTimingAnalysis.InputFiles_cff import readFiles
 
 process.source = cms.Source ("PoolSource",fileNames = cms.untracked.vstring(readFiles))
+# For 2-file solution to rerun from RAW
 #process.source.secondaryFileNames = cms.untracked.vstring(secReadFiles)
 
-process.load("RecoCTPPS.ProtonReconstruction.year_2018_OFDB.ctppsProtonReconstructionOFDB_cfi")                                                                                  
+# For individual input files
+#process.source = cms.Source ("PoolSource",
+#                             fileNames = cms.untracked.vstring(
+#'file:/tmp/jjhollar/'
+#        )
+#                             )
+
+process.load("RecoCTPPS.ProtonReconstruction.year_2017_OF.ctppsProtonReconstructionOF_cfi")
+#process.load("RecoCTPPS.ProtonReconstruction.year_2018_OFDB.ctppsProtonReconstructionOFDB_cfi")                                                                                  
 # conditions DB for 2018                                                                                                                                                         
-from CondCore.CondDB.CondDB_cfi import *                                                                                                                                         
-CondDB.connect = 'frontier://FrontierProd/CMS_CONDITIONS'                                                                                                                        
-process.PoolDBESSource2 = cms.ESSource("PoolDBESSource",                                                                                                                         
-                                       CondDB,                                                                                                                                   
-                                       DumpStat = cms.untracked.bool(False),                                                                                                     
-                                       toGet = cms.VPSet(cms.PSet(                                                                                                               
-            record = cms.string('LHCInfoRcd'),                                                                                                                                   
-            #tag = cms.string("LHCInfoTest_prompt_v3")                                                                                                                           
-            tag = cms.string("LHCInfoEndFill_prompt_v1")                                                                                                                         
-            )),                                                                                                                                                                  
-                                       )                                                                                                                                         
+#from CondCore.CondDB.CondDB_cfi import *                                                                                                                                         
+#CondDB.connect = 'frontier://FrontierProd/CMS_CONDITIONS'                                                                                                                        
+#process.PoolDBESSource2 = cms.ESSource("PoolDBESSource",                                                                                                                         
+#                                       CondDB,                                                                                                                                   
+#                                       DumpStat = cms.untracked.bool(False),                                                                                                     
+#                                       toGet = cms.VPSet(cms.PSet(                                                                                                               
+#            record = cms.string('LHCInfoRcd'),                                                                                                                                   
+#            #tag = cms.string("LHCInfoTest_prompt_v3")                                                                                                                           
+#            tag = cms.string("LHCInfoEndFill_prompt_v1")                                                                                                                         
+#            )),                                                                                                                                                                  
+#                                       )                                                                                                                                         
 
 
 process.mydiamonds = cms.EDAnalyzer(
@@ -92,11 +95,11 @@ process.mydiamonds = cms.EDAnalyzer(
     tagRPixCluster = cms.InputTag( "ctppsPixelClusters" ),
     tagRPixRecHit = cms.InputTag( "ctppsPixelRecHits" ),
     tagRPixLocalTrack = cms.InputTag( "ctppsPixelLocalTracks" ),
-#    tagTrackLites = cms.InputTag( "ctppsLocalTrackLiteProducer", "", "RECO"),
-    tagTrackLites = cms.InputTag( "ctppsLocalTrackLiteProducer"),
-#    outfilename = cms.untracked.string( "output_ZeroBias.root" )
-    outfilename = cms.untracked.string( "output_CD_MBR.root" ),
-    isMC = cms.bool(True)
+    tagTrackLites = cms.InputTag( "ctppsLocalTrackLiteProducer", "", "CTPPS2"),
+#    tagTrackLites = cms.InputTag( "ctppsLocalTrackLiteProducer"),
+    tagRecoProtons = cms.InputTag( "ctppsProtonReconstructionOFDB"),
+    outfilename = cms.untracked.string( "output_ZeroBias.root" ),
+    isMC = cms.bool(False)
 )
 
 process.mydiamonds.isLowPU = cms.bool(True)
@@ -104,6 +107,17 @@ process.mydiamonds.isLowPU = cms.bool(True)
 
 # raw-to-digi conversion
 #process.load("EventFilter.CTPPSRawToDigi.ctppsRawToDigi_cff")
+# Local RECO
+#process.load("RecoCTPPS.Configuration.recoCTPPS_cff")
+# Local pixel RECO
+process.load("RecoCTPPS.Configuration.recoCTPPS_sequences_cff")
+from Geometry.VeryForwardGeometry.geometryRPFromDB_cfi import *
+process.load("Geometry.VeryForwardGeometry.geometryRPFromDB_cfi")
+#process.load("RecoCTPPS.PixelLocal.ctppsPixelLocalReconstruction_cff")
+process.ctppsLocalTrackLiteProducer.tagPixelTrack = cms.InputTag("ctppsPixelLocalTracks","","CTPPS2")
+process.ctppsLocalTrackLiteProducer.doNothing = cms.bool(False)
+# For March 2019 re-reco from AOD
+#process.ctppsProtonReconstructionOFDB.tagLocalTrackLite = cms.InputTag("ctppsLocalTrackLiteProducer","","CTPPS2")
 
 ############
 #process.o1 = cms.OutputModule("PoolOutputModule",
@@ -111,12 +125,9 @@ process.mydiamonds.isLowPU = cms.bool(True)
 ##                                               'keep *_totemRP*_*_*',
 ##                                               'keep *_ctpps*_*_*'
 ##    
-#                              outputCommands = cms.untracked.vstring('keep *_*_*_*'
-#),
-#        fileName = cms.untracked.string('/tmp/jjhollar/CTPPS_redigi_rereco_300088_HINCaloJets.root')
+#                              outputCommands = cms.untracked.vstring('keep *_*_*_*'),
+#        fileName = cms.untracked.string('/tmp/jjhollar/CTPPS_rereco_300088_ZB.root')
 #        )
-
-#process.load("RecoCTPPS.Configuration.recoCTPPS_cff")
 
 
 process.ALL = cms.Path(
@@ -124,9 +135,15 @@ process.ALL = cms.Path(
 #    process.ctppsRawToDigi * 
 #    process.recoCTPPS * 
 #
+# March 2019 re-reco from AOD
+#    process.ctppsPixelClusters *
+#    process.ctppsPixelRecHits *
+#    process.ctppsPixelLocalTracks *
+#    process.ctppsLocalTrackLiteProducer * 
+#
 #   for data:
-#    process.ctppsProtonReconstructionOFDB *
-    process.mydiamonds
+    process.ctppsProtonReconstructionOFDB *
+    process.mydiamonds 
                        )
 
 process.schedule = cms.Schedule(process.ALL)
@@ -140,5 +157,5 @@ process.schedule = cms.Schedule(process.ALL)
 #    getattr(process,path)._seq =  getattr(process,path)._seq
 
 
-print process.dumpPython()
+#print process.dumpPython()
 
