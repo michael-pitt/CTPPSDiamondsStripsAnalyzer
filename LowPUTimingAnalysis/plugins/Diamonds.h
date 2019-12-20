@@ -1,5 +1,5 @@
-#ifndef DiffractiveForwardAnalysis_Diamonds_h
-#define DiffractiveForwardAnalysis_Diamonds_h
+#ifndef CTPPSDiamondsStripsAnalyzer_Diamonds_h
+#define CTPPSDiamondsStripsAnalyzer_Diamonds_h
 
 // system include files
 #include <memory>
@@ -17,6 +17,8 @@
 
 #include "FWCore/ParameterSet/interface/ParameterSet.h"
 #include "FWCore/ParameterSet/interface/Registry.h"
+
+#include "FWCore/Framework/interface/EventSetup.h"
 
 // HLT information
 #include "DataFormats/Common/interface/TriggerResults.h"
@@ -66,8 +68,11 @@
 #include "DataFormats/CTPPSReco/interface/CTPPSPixelLocalTrack.h"
 
 // Protons
-#include "DataFormats/ProtonReco/interface/ProtonTrack.h"
+#include "DataFormats/ProtonReco/interface/ForwardProton.h"
+#include "DataFormats/ProtonReco/interface/ForwardProtonFwd.h"
 
+#include "CondFormats/RunInfo/interface/LHCInfo.h"
+#include "CondFormats/DataRecord/interface/LHCInfoRcd.h"
 
 #include "DataFormats/HepMCCandidate/interface/GenParticle.h"
 
@@ -141,7 +146,8 @@ class Diamonds : public edm::EDAnalyzer {
 
       edm::EDGetTokenT<reco::GenParticleCollection> tokenGen_;
 
-      edm::EDGetTokenT<std::vector<reco::ProtonTrack>> tokenRecoProtons_;
+      edm::EDGetTokenT<std::vector<reco::ForwardProton> > recoProtonsSingleRPToken_;
+      edm::EDGetTokenT<std::vector<reco::ForwardProton> > recoProtonsMultiRPToken_;
 
       ////// Tree contents //////
 
@@ -149,6 +155,7 @@ class Diamonds : public edm::EDAnalyzer {
       
       // Run/event quantities
       Int_t BX, Run, LumiSection, EventNum;
+      Float_t CrossingAngle;
 
       Double_t LeadingEdge[100], TrailingEdge[100], ToT[100], XTiming[100], YTiming[100]; 
       Double_t TimingTrackT[100], TimingTrackTErr[100], TimingTrackX[100], TimingTrackY[100], TimingTrackZ[100], TimingTrackChi2[100];
@@ -175,7 +182,7 @@ class Diamonds : public edm::EDAnalyzer {
       Int_t PixTrackArm[1000];
 
       Int_t nLiteTracks;
-      Float_t TrackLiteX[1000], TrackLiteY[1000];
+      Float_t TrackLiteX[1000], TrackLiteY[1000], TrackLiteTime[1000];
       Int_t TrackLiteRPID[1000];
 
       Double_t PrimVertexZ[100], PrimVertexY[100], PrimVertexX[100];
@@ -207,6 +214,7 @@ class Diamonds : public edm::EDAnalyzer {
       Int_t ProtonIsMultiRP[100];
       Int_t ProtonRPID[100];
       Int_t ProtonArm[100];
+      Float_t ProtonTime[100];
 
       bool isMC;
 };

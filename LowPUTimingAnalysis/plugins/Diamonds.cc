@@ -38,8 +38,9 @@ Diamonds::Diamonds(const edm::ParameterSet& iConfig) :
   tracksToken_    ( consumes< reco::TrackCollection >( iConfig.getParameter<edm::InputTag>( "tracksTag" ) ) ),
   pflowToken_       ( consumes< reco::PFCandidateCollection >( iConfig.getParameter<edm::InputTag>("tagParticleFlow") ) ),
   tokenGen_         ( consumes<reco::GenParticleCollection>(edm::InputTag("genParticles")) ),
-  tokenRecoProtons_ ( consumes <std::vector<reco::ProtonTrack>>( iConfig.getParameter<edm::InputTag>("tagRecoProtons") ) )
-
+  recoProtonsSingleRPToken_   ( consumes<std::vector<reco::ForwardProton> >      ( iConfig.getParameter<edm::InputTag>( "ppsRecoProtonSingleRPTag" ) ) ),
+  recoProtonsMultiRPToken_   ( consumes<std::vector<reco::ForwardProton> >      ( iConfig.getParameter<edm::InputTag>( "ppsRecoProtonMultiRPTag" ) ) ),
+  CrossingAngle(-999.0)
 {
   
 
@@ -144,6 +145,14 @@ Diamonds::analyze(const edm::Event& iEvent, const edm::EventSetup& iSetup)
   Run = iEvent.id().run();
   LumiSection = iEvent.luminosityBlock();
   EventNum = iEvent.id().event();
+
+  // Crossing angle                                                                                                                                           
+  edm::ESHandle<LHCInfo> hLHCInfo;
+  iSetup.get<LHCInfoRcd>().get("", hLHCInfo);
+  if (hLHCInfo->crossingAngle() != CrossingAngle)
+    {
+      CrossingAngle = hLHCInfo->crossingAngle();
+    }
 
   nGenProtons = 0;
   nProtons = 0;
@@ -250,7 +259,7 @@ Diamonds::analyze(const edm::Event& iEvent, const edm::EventSetup& iSetup)
       ProtonIsMultiRP[i] = -999;
       ProtonRPID[i] = -999;
       ProtonArm[i] = -999;
-
+      ProtonTime[i] = -999.;
     }
 
   for(int i = 0; i < 1000; i++)
@@ -270,6 +279,7 @@ Diamonds::analyze(const edm::Event& iEvent, const edm::EventSetup& iSetup)
       TrackZNoVertex[i] = 0;
       TrackLiteX[i] = 0;
       TrackLiteY[i] = 0;
+      TrackLiteTime[i] = 0;
       TrackLiteRPID[i] = 0;
     }
 
@@ -584,6 +594,7 @@ Diamonds::analyze(const edm::Event& iEvent, const edm::EventSetup& iSetup)
       std::cout << "\tLite track with x, y, ID = " << trklite.getX() << ", " << trklite.getY() << ", " << raw_id << std::endl;
       TrackLiteX[nLiteTracks] = trklite.getX();
       TrackLiteY[nLiteTracks] = trklite.getY();
+      TrackLiteTime[nLiteTracks] = trklite.getTime();
       TrackLiteRPID[nLiteTracks] = raw_id;
       std::cout << "\t\tFilled arrays with x, y, ID = " << TrackLiteX[nLiteTracks] << ", " << TrackLiteY[nLiteTracks] << ", " 
 		<< TrackLiteRPID[nLiteTracks] << std::endl;
@@ -591,59 +602,77 @@ Diamonds::analyze(const edm::Event& iEvent, const edm::EventSetup& iSetup)
     }
 
   /* Full Reco protons */
-  edm::Handle<std::vector<reco::ProtonTrack>> recoProtons;
-  iEvent.getByToken(tokenRecoProtons_, recoProtons);
+  edm::Handle<std::vector<reco::ForwardProton>> recoMultiRPProtons;
+  iEvent.getByToken(recoProtonsMultiRPToken_, recoMultiRPProtons);
+  edm::Handle<std::vector<reco::ForwardProton>> recoSingleRPProtons;
+  iEvent.getByToken(recoProtonsSingleRPToken_, recoSingleRPProtons);
 
-  // make single-RP-reco plots                                                                                                                                               
-  for (const auto & proton : *recoProtons)
+  // make single-RP-reco plots                                                                                                                            
+  int ismultirp = -999;
+  unsigned int decRPId = -999;
+  unsigned int armId = -999;
+  float th_y = -999;
+  float th_x = -999;
+  float t = -999;
+  float xi = -999.;
+  float protontime = -999.;
+  
+  // Single-RP algorithm                                                                                                                             
+  for (const auto & proton : *recoSingleRPProtons)
     {
-      int ismultirp = -999;
-      unsigned int decRPId = -999;
-      unsigned int armId = -999;
-      float th_y = -999;
-      float th_x = -999;
-      float t = -999;
-      float xi = -999;
-
-      if (proton.valid())
+      std::cout << "Single-RP proton with xi = " << proton.xi() << std::endl;
+      if (proton.validFit())
 	{
-	  th_y = (proton.direction().y()) / (proton.direction().mag());
-	  th_x = (proton.direction().x()) / (proton.direction().mag());
+	  th_y = proton.thetaY();
+	  th_x = proton.thetaX();
 	  xi = proton.xi();
+	  //	  t = proton.t();
+	  protontime = proton.time();
 
-	  // t                                                                                                                                                                                   
-	  const double m = 0.938; // GeV                                                                                                                                                         
-	  const double p = 6500.; // GeV                                                                                                                                                         
-
-	  float t0 = 2.*m*m + 2.*p*p*(1.-xi) - 2.*sqrt( (m*m + p*p) * (m*m + p*p*(1.-xi)*(1.-xi)) );
-	  float th = sqrt(th_x * th_x + th_y * th_y);
-	  float S = sin(th/2.);
-	  t = t0 - 4. * p*p * (1.-xi) * S*S;
-
-	  if (proton.method == reco::ProtonTrack::rmSingleRP)
-	    {
-	      CTPPSDetId rpId(* proton.contributingRPIds.begin());
-	      decRPId = rpId.arm()*100 + rpId.station()*10 + rpId.rp();
-	      ismultirp = 0;
-	    }
-	  if (proton.method == reco::ProtonTrack::rmMultiRP)
-	    {
-	      CTPPSDetId rpId(* proton.contributingRPIds.begin());
-	      armId = rpId.arm();
-	      ismultirp = 1;
-	    }
-
-	  ProtonXi[nProtons] = proton.xi();
+	  CTPPSDetId rpId((*proton.contributingLocalTracks().begin())->getRPId());
+	  decRPId = rpId.arm()*100 + rpId.station()*10 + rpId.rp();
+	  
+	  ismultirp = 0;
+	  
+	  ProtonXi[nProtons] = xi;
+	  ProtonThX[nProtons] = th_x;
+	  ProtonThY[nProtons] = th_y;
+	  Protont[nProtons] = t;
+	  ProtonIsMultiRP[nProtons] = ismultirp;
+	  ProtonRPID[nProtons] = decRPId;
+	  ProtonArm[nProtons] = armId;
+	  ProtonTime[nProtons] = protontime;
+	  nProtons++;
+	}
+    }
+  
+  for (const auto & proton : *recoMultiRPProtons)
+    {
+      if (proton.validFit())
+        {
+          th_y = proton.thetaY();
+          th_x = proton.thetaX();
+          xi = proton.xi();
+	  //	  t = proton.t();
+          protontime = proton.time();
+	  
+          CTPPSDetId rpId((*proton.contributingLocalTracks().begin())->getRPId());
+          armId = rpId.arm();
+	  
+	  ismultirp = 1;
+	  
+	  ProtonXi[nProtons] = xi;
           ProtonThX[nProtons] = th_x;
           ProtonThY[nProtons] = th_y;
           Protont[nProtons] = t;
           ProtonIsMultiRP[nProtons] = ismultirp;
 	  ProtonRPID[nProtons] = decRPId;
 	  ProtonArm[nProtons] = armId;
+          ProtonTime[nProtons] = protontime;
 	  nProtons++;
 	}
     }
-
+  
   /* Primary vertices */
   for ( const auto& vtx : *vertices ) {                                                                           
     PrimVertexZ[nVertices] = vtx.z();
@@ -785,6 +814,7 @@ Diamonds::beginJob()
   tree->Branch("LumiSection", &LumiSection, "LumiSection/I");
   tree->Branch("BX", &BX, "BX/I");
   tree->Branch("EventNum", &EventNum, "EventNum/I");
+  tree->Branch("CrossingAngle", &CrossingAngle, "CrossingAngle/F");
 
   tree->Branch("nHitsTiming", &nHitsTiming, "nHitsTiming/I");
   tree->Branch("LeadingEdge", &LeadingEdge, "LeadingEdge[nHitsTiming]/D");
@@ -858,6 +888,7 @@ Diamonds::beginJob()
   tree->Branch("nLiteTracks", &nLiteTracks, "nLiteTracks/I");
   tree->Branch("TrackLiteX", &TrackLiteX, "TrackLiteX[nLiteTracks]/F");
   tree->Branch("TrackLiteY", &TrackLiteY, "TrackLiteY[nLiteTracks]/F");
+  tree->Branch("TrackLiteTime", &TrackLiteTime, "TrackLiteTime[nLiteTracks]/F");
   tree->Branch("TrackLiteRPID", &TrackLiteRPID, "TrackLiteRPID[nLiteTracks]/I");
 
   tree->Branch("PrimVertexZ", &PrimVertexZ, "PrimVertexZ[nVertices]/D");
@@ -911,6 +942,7 @@ Diamonds::beginJob()
   tree->Branch("ProtonIsMultiRP", &ProtonIsMultiRP, "ProtonIsMultiRP[nProtons]/I");
   tree->Branch("ProtonRPID", &ProtonRPID, "ProtonRPID[nProtons]/I");
   tree->Branch("ProtonArm", &ProtonArm, "ProtonArm[nProtons]/I");
+  tree->Branch("ProtonTime", &ProtonTime, "ProtonTime[nProtons]/F");
 }
 
 // ------------ method called once each job just after ending the event loop  ------------
