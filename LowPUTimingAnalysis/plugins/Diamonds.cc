@@ -180,6 +180,7 @@ Diamonds::analyze(const edm::Event& iEvent, const edm::EventSetup& iSetup)
 
   nVertices = 0;
   nTracksNoVertex = 0;
+  nTracksOneVertex = 0;
 
   nJets = 0;
   nPFCand = 0;
@@ -277,6 +278,8 @@ Diamonds::analyze(const edm::Event& iEvent, const edm::EventSetup& iSetup)
       PixTrackZ[i] = 0;
       PixTrackArm[i] = -1;
       TrackZNoVertex[i] = 0;
+      TrackPtOneVertex[i] = 0;
+      TrackEtaOneVertex[i] = 0;
       TrackLiteX[i] = 0;
       TrackLiteY[i] = 0;
       TrackLiteTime[i] = 0;
@@ -687,12 +690,24 @@ Diamonds::analyze(const edm::Event& iEvent, const edm::EventSetup& iSetup)
   }
 
   /* Tracks if no real vertex found */
-  if((nVertices <= 1) && (PrimVertexIsBS[0] == 1))
+  if(nVertices <= 1)
     {
-      for( const auto& tk : *tks )
+      if(PrimVertexIsBS[0] == 1)
 	{
-	  TrackZNoVertex[nTracksNoVertex] = tk.vertex().z();
-	  nTracksNoVertex++;
+	  for( const auto& tk : *tks )
+	    {
+	      TrackZNoVertex[nTracksNoVertex] = tk.vertex().z();
+	      nTracksNoVertex++;
+	    }
+	}
+      if(PrimVertexIsBS[0] == 0)
+	{
+	  for( const auto& tk : *tks )
+            {
+              TrackPtOneVertex[nTracksOneVertex] = tk.pt();
+              TrackEtaOneVertex[nTracksOneVertex] = tk.eta();
+              nTracksOneVertex++;
+            }
 	}
     }
 
@@ -906,6 +921,11 @@ Diamonds::beginJob()
 
   tree->Branch("nTracksNoVertex", &nTracksNoVertex, "nTracksNoVertex/I");
   tree->Branch("TrackZNoVertex", &TrackZNoVertex, "TrackZNoVertex[nTracksNoVertex]/D");
+  tree->Branch("nTracksOneVertex", &nTracksOneVertex, "nTracksOneVertex/I");
+  tree->Branch("TrackPtOneVertex", &TrackPtOneVertex, "TrackPtOneVertex[nTracksOneVertex]/D");
+  tree->Branch("TrackEtaOneVertex", &TrackEtaOneVertex, "TrackEtaOneVertex[nTracksOneVertex]/D");
+
+
 
   //  tree->Branch("nPFCand", &nPFCand, "nPFCand/I");
   //  tree->Branch("PFCandID", &PFCandID, "PFCandID[nPFCand]/I");

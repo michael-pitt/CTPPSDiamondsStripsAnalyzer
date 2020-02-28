@@ -189,7 +189,10 @@ class Diamonds : public edm::EDAnalyzer {
       Int_t PrimVertexIsBS[100];
 
       Int_t nTracksNoVertex;
+      Int_t nTracksOneVertex;
       Double_t TrackZNoVertex[1000];
+      Double_t TrackPtOneVertex[1000];
+      Double_t TrackEtaOneVertex[1000];
 
       Double_t JetCandEt[1000];
       Double_t JetCandEta[1000];
