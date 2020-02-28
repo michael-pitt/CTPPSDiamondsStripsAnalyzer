@@ -1,9 +1,9 @@
 // -*- C++ -*-
 //
-// Package:    Efficiency
-// Class:      Efficiency
+// Package:    StripsEfficiency
+// Class:      StripsEfficiency
 // 
-/**\class Efficiency Efficiency.cc DiffractiveForwardAnalysis/GammaGammaLeptonLepton/src/Efficiency.cc
+/**\class StripsEfficiency StripsEfficiency.cc DiffractiveForwardAnalysis/GammaGammaLeptonLepton/src/StripsEfficiency.cc
 
  Description: [one line class summary]
 
@@ -13,7 +13,7 @@
 //
 // Original Author:  Laurent Forthomme,40 4-B20,+41227671567,
 //         Created:  Thu Sep 13 15:17:14 CET 2012
-// $Id: Efficiency.cc,v 1.3 2013/04/28 08:40:45 lforthom Exp $
+// $Id: StripsEfficiency.cc,v 1.3 2013/04/28 08:40:45 lforthom Exp $
 //
 //
 
@@ -21,7 +21,7 @@
 //
 // constructors and destructor
 //
-Efficiency::Efficiency(const edm::ParameterSet& iConfig) : 
+StripsEfficiency::StripsEfficiency(const edm::ParameterSet& iConfig) : 
   pps_tracklite_token_ ( consumes<std::vector<CTPPSLocalTrackLite>>(iConfig.getParameter<edm::InputTag>("tagTrackLites") ) ),
   //  tokenLocalTrack_  ( consumes< edm::DetSetVector<TotemRPLocalTrack> >     ( iConfig.getParameter<edm::InputTag>( "tagLocalTrack" ) ) ),
   tokenLocalTrack_  ( consumes< edm::DetSetVector<TotemRPLocalTrack> >     ( edm::InputTag("totemRPLocalTrackFitter" ) ) ),                             
@@ -29,7 +29,14 @@ Efficiency::Efficiency(const edm::ParameterSet& iConfig) :
   tokenRecHit_ (consumes< edm::DetSetVector<TotemRPRecHit> > (edm::InputTag("totemRPRecHitProducer"))),
   tokenPixelLocalTrack_  ( consumes<edm::DetSetVector<CTPPSPixelLocalTrack> >(edm::InputTag("ctppsPixelLocalTracks") ) ),
   tokenDiamondTrack_( consumes< edm::DetSetVector<CTPPSDiamondLocalTrack> >( edm::InputTag( "ctppsDiamondLocalTracks" ) ) ),
-  tokenRecoProtons_ ( consumes <std::vector<reco::ProtonTrack>>(edm::InputTag("ctppsProtonReconstructionOFDB")))
+  recoProtonsSingleRPToken_   ( consumes<std::vector<reco::ForwardProton> >      ( iConfig.getParameter<edm::InputTag>( "ppsRecoProtonSingleRPTag" ) ) ),
+  recoProtonsMultiRPToken_   ( consumes<std::vector<reco::ForwardProton> >      ( iConfig.getParameter<edm::InputTag>( "ppsRecoProtonMultiRPTag" ) ) ),
+  verticesToken_    ( consumes< edm::View<reco::Vertex> >( iConfig.getParameter<edm::InputTag>( "verticesTag" ) ) ),
+  addTimingTracks_ ( iConfig.getParameter<bool>("includeTimingTracks") ),
+  onlySinglePixelTrackEvents_ ( iConfig.getParameter<bool>("selectSinglePixelTrackEvents") ),
+  is2016data_ ( iConfig.getParameter<bool>("is2016data") ),
+  CrossingAngle(-999.0)
+
 {
   
 
@@ -45,7 +52,7 @@ Efficiency::Efficiency(const edm::ParameterSet& iConfig) :
 }
 
 
-Efficiency::~Efficiency()
+StripsEfficiency::~StripsEfficiency()
 {
  
   // do anything here that needs to be done at desctruction time
@@ -63,7 +70,7 @@ Efficiency::~Efficiency()
 
 // ------------ method called for each event  ------------
 void
-Efficiency::analyze(const edm::Event& iEvent, const edm::EventSetup& iSetup)
+StripsEfficiency::analyze(const edm::Event& iEvent, const edm::EventSetup& iSetup)
 {
   using namespace edm;
   //std::cout << "Beginning First init" << std::endl;
@@ -81,8 +88,11 @@ Efficiency::analyze(const edm::Event& iEvent, const edm::EventSetup& iSetup)
   nLiteTracks = 0;
   nStripTracks = 0;
   nPixelTracks = 0;
+  nPixelTracks45 = 0;
+  nPixelTracks56 = 0;
   nProtons = 0;
   nTimingTracks = 0;
+  nVertices = 0;
 
   for(int i = 0; i < 1000; i++)
     {
@@ -98,6 +108,7 @@ Efficiency::analyze(const edm::Event& iEvent, const edm::EventSetup& iSetup)
       PixTrackNdof[i] = 0;
       PixTrackZ[i] = 0;
       PixTrackArm[i] = -1;
+      PixTrackShift[i] = -1;
     }
   for(int j = 0; j < 4; j++)
     {
@@ -129,8 +140,16 @@ Efficiency::analyze(const edm::Event& iEvent, const edm::EventSetup& iSetup)
       TimingTrackArm[k] = -999;
     }
 
+  // Crossing angle
+  edm::ESHandle<LHCInfo> hLHCInfo;
+  iSetup.get<LHCInfoRcd>().get("", hLHCInfo);
+  if (hLHCInfo->crossingAngle() != CrossingAngle)
+    {
+      CrossingAngle = hLHCInfo->crossingAngle();
+    }
+
   /* Lite tracks */
-  // Proton lite tracks                                                                                                                                      
+  // Proton lite tracks                                        
   edm::Handle<std::vector<CTPPSLocalTrackLite> > ppsTracksLite;
   iEvent.getByToken( pps_tracklite_token_, ppsTracksLite );
 
@@ -138,7 +157,7 @@ Efficiency::analyze(const edm::Event& iEvent, const edm::EventSetup& iSetup)
     {
       const CTPPSDetId detid( trklite.getRPId() );
 
-      // transform the raw, 32-bit unsigned integer detId into the TOTEM "decimal" notation                                                                  
+      // transform the raw, 32-bit unsigned integer detId into the TOTEM "decimal" notation                                                              
       const unsigned short raw_id = 100*detid.arm()+10*detid.station()+detid.rp();
       
       TrackLiteX[nLiteTracks] = trklite.getX();
@@ -156,53 +175,74 @@ Efficiency::analyze(const edm::Event& iEvent, const edm::EventSetup& iSetup)
   edm::Handle< DetSetVector<TotemRPRecHit> > stripRecHits;
   iEvent.getByToken(tokenRecHit_, stripRecHits);
 
-  // Pixels
-  edm::Handle< edm::DetSetVector<CTPPSPixelLocalTrack> > pixLocalTracks;
-  iEvent.getByToken(tokenPixelLocalTrack_, pixLocalTracks);
-
-  for ( const auto& dspxtr1 : *pixLocalTracks ) {
-    for ( const auto& pxtr1 : dspxtr1 ) {
-      if ( ! pxtr1.isValid() )  continue;
-
-      CTPPSDetId pxrpId1( dspxtr1.detId() );
-      unsigned int pxarm1 = pxrpId1.arm();
-
-      PixTrackX[nPixelTracks] = pxtr1.getX0();
-      PixTrackY[nPixelTracks] = pxtr1.getY0();
-      PixTrackThX[nPixelTracks] = pxtr1.getTx();
-      PixTrackThY[nPixelTracks] = pxtr1.getTy();
-      PixTrackChi2[nPixelTracks] = pxtr1.getChiSquared();
-      PixTrackNdof[nPixelTracks] = pxtr1.getNDF();
-      PixTrackZ[nPixelTracks] = pxtr1.getZ0();
-      PixTrackArm[nPixelTracks] = pxarm1;
-
-      nPixelTracks++;
-    }
-  }
-
-  /* Diamond tracks */
-  edm::Handle< edm::DetSetVector<CTPPSDiamondLocalTrack> > diamondLocalTracks;
-  iEvent.getByToken( tokenDiamondTrack_, diamondLocalTracks );
-
-  for ( const auto& ds2 : *diamondLocalTracks )
+  // No pixels or diamonds in 2016
+  if(is2016data_ == false)
     {
-      for ( const auto& tr2 : ds2 )
-        {
-          if ( ! tr2.isValid() ) continue;
+      // Pixels                                                                                                                                                                    
+      edm::Handle< edm::DetSetVector<CTPPSPixelLocalTrack> > pixLocalTracks;
+      iEvent.getByToken(tokenPixelLocalTrack_, pixLocalTracks);
+      
+      for ( const auto& dspxtr1 : *pixLocalTracks ) {
+	for ( const auto& pxtr1 : dspxtr1 ) {
+	  if ( ! pxtr1.isValid() )  continue;
 	  
-          CTPPSDetId diamId2( ds2.detId() );
-          unsigned int arm1 = diamId2.arm();
+	  CTPPSDetId pxrpId1( dspxtr1.detId() );
+	  unsigned int pxarm1 = pxrpId1.arm();
+	  int pixshift1 = -1;
 	  
-          TimingTrackX[nTimingTracks] = tr2.getX0();
-          TimingTrackY[nTimingTracks] = tr2.getY0();
-          TimingTrackZ[nTimingTracks] = tr2.getZ0();
-          TimingTrackArm[nTimingTracks] = arm1;
-
-          nTimingTracks++;
-        }
+	  PixTrackX[nPixelTracks] = pxtr1.getX0();
+	  PixTrackY[nPixelTracks] = pxtr1.getY0();
+	  PixTrackThX[nPixelTracks] = pxtr1.getTx();
+	  PixTrackThY[nPixelTracks] = pxtr1.getTy();
+	  PixTrackChi2[nPixelTracks] = pxtr1.getChiSquared();
+	  PixTrackNdof[nPixelTracks] = pxtr1.getNDF();
+	  PixTrackZ[nPixelTracks] = pxtr1.getZ0();
+	  PixTrackArm[nPixelTracks] = pxarm1;
+	  
+	  CTPPSpixelLocalTrackReconstructionInfo pixtrackinfo1 = pxtr1.getRecoInfo();
+	  if(pixtrackinfo1 == CTPPSpixelLocalTrackReconstructionInfo::notShiftedRun || pixtrackinfo1 == CTPPSpixelLocalTrackReconstructionInfo::noShiftedPlanes ||
+	     pixtrackinfo1 == CTPPSpixelLocalTrackReconstructionInfo::invalid)
+	    pixshift1 = 0;
+	  else
+	    pixshift1 = 1;
+	  
+	  PixTrackShift[nPixelTracks] = pixshift1; 
+	  
+	  if(pxarm1 == 0)
+	    nPixelTracks45++;
+	  if(pxarm1 == 1)
+	    nPixelTracks56++;
+	  
+	  nPixelTracks++;
+	}
+      }
+      
+      /* Diamond tracks */
+      edm::Handle< edm::DetSetVector<CTPPSDiamondLocalTrack> > diamondLocalTracks;
+      iEvent.getByToken( tokenDiamondTrack_, diamondLocalTracks );
+      
+      if(addTimingTracks_ == true)
+	{
+	  for ( const auto& ds2 : *diamondLocalTracks )
+	    {
+	      for ( const auto& tr2 : ds2 )
+		{
+		  if ( ! tr2.isValid() ) continue;
+		  
+		  CTPPSDetId diamId2( ds2.detId() );
+		  unsigned int arm1 = diamId2.arm();
+		  
+		  TimingTrackX[nTimingTracks] = tr2.getX0();
+		  TimingTrackY[nTimingTracks] = tr2.getY0();
+		  TimingTrackZ[nTimingTracks] = tr2.getZ0();
+		  TimingTrackArm[nTimingTracks] = arm1;
+		  
+		  nTimingTracks++;
+		}
+	    }
+	}
     }
 
-  
   // Jan...
   struct StripInfo
   {
@@ -301,8 +341,6 @@ Efficiency::analyze(const edm::Event& iEvent, const edm::EventSetup& iSetup)
 	}
     }
 
-  
-  //  std::cout << "Looping on stripInfo" << std::endl;
   for (auto &p : stripInfo)
     {
       auto &rpInfo = p.second;
@@ -324,10 +362,6 @@ Efficiency::analyze(const edm::Event& iEvent, const edm::EventSetup& iSetup)
       rpInfo.u_tooFull = (n_too_full_u >= 3);
       rpInfo.v_tooFull = (n_too_full_v >= 3);
 
-      //      std::cout << "\tindex = " << nStripTracks << ", RPID = " << rpInfo.rpid << ", U patterns = " << rpInfo.u_patterns << ", V patterns = " << rpInfo.v_patterns 
-      //		<< ", U too full = " << rpInfo.u_tooFull << ", V too full = " << rpInfo.v_tooFull 
-      //		<< ", valid track = " << rpInfo.hasValidTrack << std::endl;
-
       StripTrackValid[nStripTracks] = rpInfo.hasValidTrack;
       StripTrackX[nStripTracks] = rpInfo.x;
       StripTrackY[nStripTracks] = rpInfo.y;
@@ -342,69 +376,90 @@ Efficiency::analyze(const edm::Event& iEvent, const edm::EventSetup& iSetup)
     }
 
   /* Full Reco protons */
-  edm::Handle<std::vector<reco::ProtonTrack>> recoProtons;
-  iEvent.getByToken(tokenRecoProtons_, recoProtons);
+  edm::Handle<std::vector<reco::ForwardProton>> recoMultiRPProtons;
+  iEvent.getByToken(recoProtonsMultiRPToken_, recoMultiRPProtons);
+  edm::Handle<std::vector<reco::ForwardProton>> recoSingleRPProtons;
+  iEvent.getByToken(recoProtonsSingleRPToken_, recoSingleRPProtons);
+
 
   // make single-RP-reco plots                                                                                                                     
-  for (const auto & proton : *recoProtons)
+  int ismultirp = -999;
+  unsigned int decRPId = -999;
+  unsigned int armId = -999;
+  float th_y = -999;
+  float th_x = -999;
+  float t = -999;
+  float xi = -999;
+  
+  // Single-RP algorithm                                                                                                                                            
+  for (const auto & proton : *recoSingleRPProtons)
     {
-      int ismultirp = -999;
-      unsigned int decRPId = -999;
-      unsigned int armId = -999;
-      float th_y = -999;
-      float th_x = -999;
-      float t = -999;
-      float xi = -999;
-
-      if (proton.valid())
+      if (proton.validFit())
         {
-
-          th_y = (proton.direction().y()) / (proton.direction().mag());
-          th_x = (proton.direction().x()) / (proton.direction().mag());
+          th_y = proton.thetaY();
+          th_x = proton.thetaX();
           xi = proton.xi();
+          //      t = proton.t();                                                                                                                                   
 
-          // t                                                                                                                                    
-          const double m = 0.938; // GeV                                                                                                          
-          const double p = 6500.; // GeV                                                                                                          
+          CTPPSDetId rpId((*proton.contributingLocalTracks().begin())->getRPId());
+          decRPId = rpId.arm()*100 + rpId.station()*10 + rpId.rp();
 
-          float t0 = 2.*m*m + 2.*p*p*(1.-xi) - 2.*sqrt( (m*m + p*p) * (m*m + p*p*(1.-xi)*(1.-xi)) );
-          float th = sqrt(th_x * th_x + th_y * th_y);
-          float S = sin(th/2.);
-          t = t0 - 4. * p*p * (1.-xi) * S*S;
+          ismultirp = 0;
 
-          if (proton.method == reco::ProtonTrack::rmSingleRP)
-            {
-              CTPPSDetId rpId(* proton.contributingRPIds.begin());
-              decRPId = rpId.arm()*100 + rpId.station()*10 + rpId.rp();
-              ismultirp = 0;
-            }
-          if (proton.method == reco::ProtonTrack::rmMultiRP)
-            {
-              CTPPSDetId rpId(* proton.contributingRPIds.begin());
-              armId = rpId.arm();
-              ismultirp = 1;
-            }
-
-          ProtonXi[nProtons] = proton.xi();
+          ProtonXi[nProtons] = xi;
           ProtonThX[nProtons] = th_x;
           ProtonThY[nProtons] = th_y;
           Protont[nProtons] = t;
           ProtonIsMultiRP[nProtons] = ismultirp;
           ProtonRPID[nProtons] = decRPId;
+	  //          ProtonArm[nProtons] = armId;
+          nProtons++;
+        }
+    }
+
+  for (const auto & proton : *recoMultiRPProtons)
+    {
+      if (proton.validFit())
+        {
+          th_y = proton.thetaY();
+          th_x = proton.thetaX();
+          xi = proton.xi();
+          //      t = proton.t();                                                                                                                                   
+
+          CTPPSDetId rpId((*proton.contributingLocalTracks().begin())->getRPId());
+          armId = rpId.arm();
+
+          ismultirp = 1;
+
+          ProtonXi[nProtons] = xi;
+          ProtonThX[nProtons] = th_x;
+          ProtonThY[nProtons] = th_y;
+          Protont[nProtons] = t;
+          ProtonIsMultiRP[nProtons] = ismultirp;
+	  //          ProtonRPID[nProtons] = decRPId;
           ProtonArm[nProtons] = armId;
           nProtons++;
         }
     }
-  
 
+  // Pedro...
+  edm::Handle< edm::View<reco::Vertex> > vertices;
+  iEvent.getByToken( verticesToken_, vertices );
 
-  efftree->Fill();
+  /* Primary vertices */
+  for ( const auto& vtx : *vertices ) {
+    if(vtx.isFake() != 1)
+      nVertices++;
+  }
+
+  if((onlySinglePixelTrackEvents_ == true && (nPixelTracks45==1 || nPixelTracks56==1)) || (onlySinglePixelTrackEvents_ == false))
+    efftree->Fill();
 }
 
 
 // ------------ method called once each job just before starting event loop  ------------
 void 
-Efficiency::beginJob()
+StripsEfficiency::beginJob()
 {
   // Booking the ntuple
 
@@ -412,6 +467,7 @@ Efficiency::beginJob()
   efftree->Branch("LumiSection", &LumiSection, "LumiSection/I");
   efftree->Branch("BX", &BX, "BX/I");
   efftree->Branch("EventNum", &EventNum, "EventNum/I");
+  efftree->Branch("CrossingAngle", &CrossingAngle, "CrossingAngle/F");
 
   efftree->Branch("nLiteTracks", &nLiteTracks, "nLiteTracks/I");
   efftree->Branch("TrackLiteX", &TrackLiteX, "TrackLiteX[nLiteTracks]/F");
@@ -439,6 +495,7 @@ Efficiency::beginJob()
   efftree->Branch("PixTrackNdof", &PixTrackNdof, "PixTrackNdof[nPixelTracks]/I");
   efftree->Branch("PixTrackZ", &PixTrackZ, "PixTrackZ[nPixelTracks]/D");
   efftree->Branch("PixTrackArm", &PixTrackArm, "PixTrackArm[nPixelTracks]/I");
+  efftree->Branch("PixTrackShift", &PixTrackShift, "PixTrackShift[nPixelTracks]/I");
 
   efftree->Branch("nTimingTracks", &nTimingTracks, "nTimingTracks/I");
   efftree->Branch("TimingTrackX", &TimingTrackX, "TimingTrackX[nTimingTracks]/D");
@@ -455,42 +512,44 @@ Efficiency::beginJob()
   efftree->Branch("ProtonRPID", &ProtonRPID, "ProtonRPID[nProtons]/I");
   efftree->Branch("ProtonArm", &ProtonArm, "ProtonArm[nProtons]/I");
 
+  efftree->Branch("nVertices", &nVertices, "nVertices/I");
+
 }
 
 // ------------ method called once each job just after ending the event loop  ------------
 void 
-Efficiency::endJob() 
+StripsEfficiency::endJob() 
 {
   //  std::cout << "==> Number of candidates in the dataset : " << nCandidates << std::endl;
 }
 
 // ------------ method called when starting to processes a run  ------------
 void 
-Efficiency::beginRun(edm::Run const& iRun, edm::EventSetup const& iSetup)
+StripsEfficiency::beginRun(edm::Run const& iRun, edm::EventSetup const& iSetup)
 {
 }
 
 // ------------ method called when ending the processing of a run  ------------
 void 
-Efficiency::endRun(edm::Run const&, edm::EventSetup const&)
+StripsEfficiency::endRun(edm::Run const&, edm::EventSetup const&)
 {
 }
 
 // ------------ method called when starting to processes a luminosity block  ------------
 void 
-Efficiency::beginLuminosityBlock(edm::LuminosityBlock const&, edm::EventSetup const&)
+StripsEfficiency::beginLuminosityBlock(edm::LuminosityBlock const&, edm::EventSetup const&)
 {
 }
 
 // ------------ method called when ending the processing of a luminosity block  ------------
 void 
-Efficiency::endLuminosityBlock(edm::LuminosityBlock const&, edm::EventSetup const&)
+StripsEfficiency::endLuminosityBlock(edm::LuminosityBlock const&, edm::EventSetup const&)
 {
 }
 
 // ------------ method fills 'descriptions' with the allowed parameters for the module  ------------
 void
-Efficiency::fillDescriptions(edm::ConfigurationDescriptions& descriptions) {
+StripsEfficiency::fillDescriptions(edm::ConfigurationDescriptions& descriptions) {
   //The following says we do not know what parameters are allowed so do no validation
   // Please change this to state exactly what you do use, even if it is no parameters
   edm::ParameterSetDescription desc;
@@ -499,4 +558,4 @@ Efficiency::fillDescriptions(edm::ConfigurationDescriptions& descriptions) {
 }
 
 //define this as a plug-in
-DEFINE_FWK_MODULE(Efficiency);
+DEFINE_FWK_MODULE(StripsEfficiency);

@@ -1,5 +1,5 @@
-#ifndef DiffractiveForwardAnalysis_Diamonds_h
-#define DiffractiveForwardAnalysis_Diamonds_h
+#ifndef CTPPSDiamondsStripsAnalyzer_StripsEfficiency_h
+#define CTPPSDiamondsStripsAnalyzer_StripsEfficiency_h
 
 // system include files
 #include <memory>
@@ -17,6 +17,8 @@
 
 #include "FWCore/ParameterSet/interface/ParameterSet.h"
 #include "FWCore/ParameterSet/interface/Registry.h"
+#include "FWCore/ServiceRegistry/interface/Service.h"
+#include "FWCore/Framework/interface/EventSetup.h"
 
 // HLT information
 #include "DataFormats/Common/interface/TriggerResults.h"
@@ -54,11 +56,17 @@
 #include "DataFormats/CTPPSReco/interface/CTPPSPixelRecHit.h"
 #include "DataFormats/CTPPSReco/interface/CTPPSPixelLocalTrack.h"
 
-// Protons                                                                                                                                                                                
-#include "DataFormats/ProtonReco/interface/ProtonTrack.h"
+// Protons                                                                                                                                                
+#include "DataFormats/ProtonReco/interface/ForwardProton.h"
+#include "DataFormats/ProtonReco/interface/ForwardProtonFwd.h"
 
+#include "CondFormats/RunInfo/interface/LHCInfo.h"
+#include "CondFormats/DataRecord/interface/LHCInfoRcd.h"
 
 #include "DataFormats/HepMCCandidate/interface/GenParticle.h"
+
+// Vertices
+#include "DataFormats/VertexReco/interface/Vertex.h"
 
 
 #include <TFile.h>
@@ -90,10 +98,10 @@
 // class declaration
 //
 
-class Efficiency : public edm::EDAnalyzer {
+class StripsEfficiency : public edm::EDAnalyzer {
    public:
-      explicit Efficiency(const edm::ParameterSet&);
-      ~Efficiency();
+      explicit StripsEfficiency(const edm::ParameterSet&);
+      ~StripsEfficiency();
 
       static void fillDescriptions(edm::ConfigurationDescriptions& descriptions);
 
@@ -125,14 +133,20 @@ class Efficiency : public edm::EDAnalyzer {
       edm::EDGetTokenT< edm::DetSetVector<TotemRPRecHit >> tokenRecHit_;
       edm::EDGetTokenT< edm::DetSetVector<CTPPSPixelLocalTrack> > tokenPixelLocalTrack_;
       edm::EDGetTokenT< edm::DetSetVector<CTPPSDiamondLocalTrack> > tokenDiamondTrack_;
-      edm::EDGetTokenT<std::vector<reco::ProtonTrack>> tokenRecoProtons_;
-      ////// Tree contents //////
+      edm::EDGetTokenT<std::vector<reco::ForwardProton> > recoProtonsSingleRPToken_;
+      edm::EDGetTokenT<std::vector<reco::ForwardProton> > recoProtonsMultiRPToken_;
 
+      edm::EDGetTokenT< edm::View<reco::Vertex> > verticesToken_;
+
+      ////// Tree contents //////
+      bool addTimingTracks_;
+      bool onlySinglePixelTrackEvents_;
+      bool is2016data_;
 
       
       // Run/event quantities
       Int_t BX, Run, LumiSection, EventNum;
-
+      Float_t CrossingAngle;
       
       Int_t nLiteTracks;
       Int_t nStripTracks;
@@ -142,12 +156,13 @@ class Efficiency : public edm::EDAnalyzer {
       Int_t StripTrackValid[4], StripTrackRPID[4], StripTrackTooFullU[4], StripTrackTooFullV[4], StripTrackUPatterns[4], StripTrackVPatterns[4];
       Int_t nPixelTracks;
       Double_t PixTrackX[1000], PixTrackY[1000], PixTrackThX[1000], PixTrackThY[1000], PixTrackChi2[1000], PixTrackZ[1000];
-      Int_t PixTrackNdof[1000];
+      Int_t PixTrackNdof[1000], PixTrackShift[1000];
       Int_t PixTrackArm[1000];
       Int_t nTimingTracks;
       Float_t TimingTrackX[100], TimingTrackY[100], TimingTrackZ[100];
       Int_t TimingTrackArm[100];
 
+      Int_t nPixelTracks45, nPixelTracks56;
 
       Int_t nProtons;
       Float_t ProtonXi[100];
@@ -158,6 +173,7 @@ class Efficiency : public edm::EDAnalyzer {
       Int_t ProtonRPID[100];
       Int_t ProtonArm[100];
 
+      Int_t nVertices;
 };
 
 //
