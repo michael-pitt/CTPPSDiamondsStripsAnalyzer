@@ -45,15 +45,9 @@ void NewTimingMacro::Loop()
    TH1F *h8 = new TH1F("h8","h8",200,0,200);
 
    Int_t nentries = fChain->GetEntries();
-   //   nentries = 10000.0;
 
    Long64_t nbytes = 0, nb = 0;
-   //   for (Long64_t jentry=15418460; jentry<nentries;jentry++) {
-     //     if(jentry > 22000000 && jentry < 23000000)
-     //       continue;
    for (Long64_t jentry=0; jentry<nentries;jentry++) {
-     //     if((jentry > 15418460 && jentry < 15420000) || (jentry > 23650000 && jentry < 23660000))
-     //       continue;
 
       Long64_t ientry = LoadTree(jentry);
 
