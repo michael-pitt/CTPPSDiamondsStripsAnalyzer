@@ -2,7 +2,9 @@
 
 Analyzers for studies of strips radiation damage efficiency, diamonds timing in Low-PU data, y* reconstruction/optics in Low-PU data
 
-[forked from https://github.com/dfigueiredo/CTPPSDiamondAnalyzer - see there for instructions to run the 
+[forked from https://github.com/jjhollar/CTPPSDiamondAnalyzer - see there for instructions to run the 
+original monitor/skimming code]
+[which forked from https://github.com/dfigueiredo/CTPPSDiamondAnalyzer - see there for instructions to run the 
 original monitor/skimming code]
 
 ---------------------------------------------------------------
@@ -16,7 +18,7 @@ cmsenv
 
 git cms-init
 
-git clone https://github.com/jjhollar/CTPPSDiamondsStripsAnalyzer.git
+git clone https://github.com/michael-pitt/CTPPSDiamondsStripsAnalyzer.git
 
 scram b -j 8
 
