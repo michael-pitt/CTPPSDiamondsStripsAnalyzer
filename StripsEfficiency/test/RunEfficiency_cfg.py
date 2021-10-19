@@ -68,8 +68,8 @@ process.myefficiency = cms.EDAnalyzer(
     ppsRecoProtonSingleRPTag = cms.InputTag("ctppsProtons", "singleRP"),
     ppsRecoProtonMultiRPTag = cms.InputTag("ctppsProtons", "multiRP"),
     includeTimingTracks = cms.bool(False),
-    selectSinglePixelTrackEvents = cms.bool(False),
-    is2016data = cms.bool(True),
+    selectSinglePixelTrackEvents = cms.bool(True),
+    is2016data = cms.bool(False),
     outfilename = cms.untracked.string( "output_EfficiencyTest.root" )
 )
 
