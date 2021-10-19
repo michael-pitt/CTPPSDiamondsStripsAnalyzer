@@ -48,35 +48,39 @@ process.source = cms.Source ("PoolSource",
 #'/store/data/Run2017A/ZeroBias5/MINIAOD/PromptReco-v1/000/294/737/00000/AA1C2154-1340-E711-922D-02163E019E3C.root',
 #'/store/data/Run2017A/ZeroBias5/MINIAOD/PromptReco-v1/000/294/737/00000/567B73D3-9F40-E711-B188-02163E01A62D.root'
 #'file:/tmp/jjhollar/38D4C37A-0940-E711-8F9C-02163E0142CE.root'
-#'/store/data/Run2017B/SingleMuon/AOD/17Nov2017-v1/60000/CC68436B-7ED7-E711-B900-02163E01A211.root'
+'/store/data/Run2017H/SingleMuon/AOD/09Aug2019_UL2017_LowPU-v1/10000/018D9E69-D079-434F-95C7-87A3F32B6F3B.root'
 #'file:/tmp/jjhollar/72713F8B-16DE-E711-8528-02163E0145C9.root'
 #'file:/tmp/jjhollar/4E012B5C-C6E2-E711-B52F-02163E014520.root'
-'file:/tmp/jjhollar/4AAE90A8-1EE4-E711-A0DA-02163E01A1D8.root'
+#'file:/tmp/jjhollar/4AAE90A8-1EE4-E711-A0DA-02163E01A1D8.root'
 
         ))
 
-process.load("CTPPSDiamondAnalyzer.LowPUTimingAnalysis.HLTFilter_cfi")
-process.hltFilter.TriggerResultsTag = cms.InputTag("TriggerResults","","HLT")
+#process.load("CTPPSDiamondAnalyzer.LowPUTimingAnalysis.HLTFilter_cfi")
+#process.hltFilter.TriggerResultsTag = cms.InputTag("TriggerResults","","HLT")
 
 #process.load("RecoCTPPS.ProtonReconstruction.year_2018_OFDB.ctppsProtonReconstructionOFDB_cfi")
-process.load("RecoCTPPS.ProtonReconstruction.year_2017_OF.ctppsProtonReconstructionOF_cfi")
+#process.load("RecoCTPPS.ProtonReconstruction.year_2017_OF.ctppsProtonReconstructionOF_cfi")
 
 process.myefficiency = cms.EDAnalyzer(
-    'Efficiency',
+    'StripsEfficiency',
     verticesTag = cms.InputTag('offlinePrimaryVertices'),
     tagTrackLites = cms.InputTag( "ctppsLocalTrackLiteProducer" ),
+    ppsRecoProtonSingleRPTag = cms.InputTag("ctppsProtons", "singleRP"),
+    ppsRecoProtonMultiRPTag = cms.InputTag("ctppsProtons", "multiRP"),
+    includeTimingTracks = cms.bool(False),
+    selectSinglePixelTrackEvents = cms.bool(False),
+    is2016data = cms.bool(True),
     outfilename = cms.untracked.string( "output_EfficiencyTest.root" )
 )
 
 from Configuration.AlCa.GlobalTag import GlobalTag
-process.GlobalTag = GlobalTag(process.GlobalTag, 'auto:run2_hlt_relval', '')
+process.GlobalTag = GlobalTag(process.GlobalTag, "106X_dataRun2_v24")
 
 
 #process.load("RecoCTPPS.Configuration.recoCTPPS_cff")
 
 
 process.ALL = cms.Path(
-    process.ctppsProtonReconstructionOFDB *
     process.myefficiency
                        )
 
