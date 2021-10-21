@@ -3,50 +3,11 @@
 #include <TH2.h>
 #include <TStyle.h>
 #include <TCanvas.h>
+#include <TMath.h>
 
-Int_t StripsEfficiency::getXangle(int run,int lumi, const char* filename)
-{
-  int runnum = -1;
-  int lsmin = -1;
-  int lsmax = -1;
-  int Xangle=-1;
+#include <iostream>
 
-  ifstream F;
-  F.open((const char*)filename);
-
-
-  if(F){
-    while (!F.eof())
-      {
-        F>>runnum;
-        F>>lsmin;
-        F>>lsmax;
-        F>>Xangle;
-
-        if( (run == runnum) &&  (lumi>=lsmin) && (lumi<=lsmax) )
-          {
-            //      cout << "Read: "<< run<<" " << lumi<<"    -----> "<<Xangle << endl;                                                                                                      \
-                                                                                                                                                                                              
-            break;
-          }
-      }
-  }//endif                                                                                                                                                                                   \
-                                                                                                                                                                                              
-  else cout << "[!] getXangle(): Error reading from file." << endl;
-
-  if(F.eof())
-    {
-      cout << "[!] getXangle(): Warning: No crossing angle data for Run "<< run<<", LS " << lumi <<" !" <<endl;
-      F.close();
-      return -1;
-    }
-
-  else
-    {
-      F.close();
-      return Xangle;
-    }
-}
+using namespace std;
 
 
 void StripsEfficiency::Loop(int runmin, int runmax, string era)
@@ -210,7 +171,6 @@ void StripsEfficiency::Loop(int runmin, int runmax, string era)
 	}
 
       Int_t thexingangle = 0;
-      //      thexingangle = getXangle(Run,LumiSection,"/tmp/jjhollar/xinganglerange_tillTS2.txt");
       thexingangle = 150;
 
       Int_t npixt23 = 0;
@@ -490,7 +450,7 @@ void StripsEfficiency::Loop(int runmin, int runmax, string era)
    //   TString outfilename = "EffstudiesMatchingDebugTest_BTagCSV_";
    //   TString outfilename = "EffstudiesMatchingDebugTest_JetHT_";
    //   TString outfilename = "EffstudiesMatchingDebugTest_PixelQualityCuts_";
-   TString outfilename = "EffstudiesMatchingDebugTestAllRunsAllTracksAllY_";
+   TString outfilename = "EffstudiesMatchingDebugTestAllRunsAllTracksAllY_Run2_2017_";
    outfilename += era;
    outfilename += "_";
    outfilename += runmin;

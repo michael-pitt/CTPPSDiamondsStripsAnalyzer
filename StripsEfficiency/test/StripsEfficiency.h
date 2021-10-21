@@ -102,9 +102,8 @@ public :
    virtual Int_t    Cut(Long64_t entry);
    virtual Int_t    GetEntry(Long64_t entry);
    virtual Long64_t LoadTree(Long64_t entry);
-   virtual Int_t    getXangle(int run,int lumi, const char* filename);
    virtual void     Init(TTree *tree);
-   virtual void     Loop(int runmin=0, int runmax=9999999, string era="2017B");
+   virtual void     Loop(int runmin=0, int runmax=9999999, string era="2017H");
    virtual Bool_t   Notify();
    virtual void     Show(Long64_t entry = -1);
 };
@@ -117,9 +116,7 @@ StripsEfficiency::StripsEfficiency(TTree *tree) : fChain(0)
 // if parameter tree is not specified (or zero), connect the file
 // used to generate this class and read the Tree.
    if (tree == 0) {
-     //     TFile *f = (TFile*)gROOT->GetListOfFiles()->FindObject("/tmp/jjhollar/ctpps_2017E_efficiency_jetht_merge.root");
-     //     TFile *f = (TFile*)gROOT->GetListOfFiles()->FindObject("/tmp/jjhollar/ctpps_2017E_efficiency_btagcsv_merge.root");
-     TFile *f = (TFile*)gROOT->GetListOfFiles()->FindObject("/eos/cms/store/group/dpg_ctpps/comm_ctpps/StripsEfficiencies2017/ctpps_2017B_efficiency_singleele_merge.root");
+     TFile *f = (TFile*)gROOT->GetListOfFiles()->FindObject("output_EfficiencyTest.root");
 
       if (!f || !f->IsOpen()) {
 	//	f = new TFile("/tmp/jjhollar/ctpps_2017E_efficiency_jetht_merge.root");

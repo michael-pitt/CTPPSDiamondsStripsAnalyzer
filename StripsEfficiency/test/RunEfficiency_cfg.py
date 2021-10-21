@@ -1,9 +1,9 @@
-
 import FWCore.ParameterSet.Config as cms
+import copy
 
 from Configuration.StandardSequences.Eras import eras
 
-process = cms.Process('CTPPS2',eras.Run2_25ns)
+process = cms.Process('CTPPS',eras.Run2_2017)
 
 # import of standard configurations
 process.load('Configuration.StandardSequences.Services_cff')
@@ -55,8 +55,12 @@ process.source = cms.Source ("PoolSource",
 
         ))
 
-#process.load("CTPPSDiamondAnalyzer.LowPUTimingAnalysis.HLTFilter_cfi")
-#process.hltFilter.TriggerResultsTag = cms.InputTag("TriggerResults","","HLT")
+# Trigger                                                                                                                                                   
+from HLTrigger.HLTfilters.hltHighLevel_cfi import *
+process.hltFilter = copy.deepcopy(hltHighLevel)
+process.hltFilter.TriggerResultsTag = cms.InputTag("TriggerResults","","HLT")
+#process.hltFilter.HLTPaths = ['HLT_Ele32_WPTight_Gsf_L1DoubleEG_v*','HLT_Ele35_WPTight_Gsf_v*']
+process.hltFilter.HLTPaths = ['HLT_IsoMu27_v*']                                                                                                             
 
 #process.load("RecoCTPPS.ProtonReconstruction.year_2018_OFDB.ctppsProtonReconstructionOFDB_cfi")
 #process.load("RecoCTPPS.ProtonReconstruction.year_2017_OF.ctppsProtonReconstructionOF_cfi")

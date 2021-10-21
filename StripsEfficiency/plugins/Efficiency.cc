@@ -190,6 +190,18 @@ StripsEfficiency::analyze(const edm::Event& iEvent, const edm::EventSetup& iSetu
 	  unsigned int pxarm1 = pxrpId1.arm();
 	  int pixshift1 = -1;
 	  
+	  // Check if the pixel track comes from shifted plane and skip if true:
+	  
+	  CTPPSpixelLocalTrackReconstructionInfo pixtrackinfo1 = pxtr1.getRecoInfo();
+	  if(pixtrackinfo1 == CTPPSpixelLocalTrackReconstructionInfo::notShiftedRun || pixtrackinfo1 == CTPPSpixelLocalTrackReconstructionInfo::noShiftedPlanes ||
+	     pixtrackinfo1 == CTPPSpixelLocalTrackReconstructionInfo::invalid)
+	    pixshift1 = 0;
+	  else
+	    pixshift1 = 1;
+	
+	  if(pixshift1) continue; // MP: We agree with Jonathan that there will be no use of these tracks so we can skip it
+	  
+	  PixTrackShift[nPixelTracks] = pixshift1;   
 	  PixTrackX[nPixelTracks] = pxtr1.getX0();
 	  PixTrackY[nPixelTracks] = pxtr1.getY0();
 	  PixTrackThX[nPixelTracks] = pxtr1.getTx();
@@ -199,14 +211,6 @@ StripsEfficiency::analyze(const edm::Event& iEvent, const edm::EventSetup& iSetu
 	  PixTrackZ[nPixelTracks] = pxtr1.getZ0();
 	  PixTrackArm[nPixelTracks] = pxarm1;
 	  
-	  CTPPSpixelLocalTrackReconstructionInfo pixtrackinfo1 = pxtr1.getRecoInfo();
-	  if(pixtrackinfo1 == CTPPSpixelLocalTrackReconstructionInfo::notShiftedRun || pixtrackinfo1 == CTPPSpixelLocalTrackReconstructionInfo::noShiftedPlanes ||
-	     pixtrackinfo1 == CTPPSpixelLocalTrackReconstructionInfo::invalid)
-	    pixshift1 = 0;
-	  else
-	    pixshift1 = 1;
-	  
-	  PixTrackShift[nPixelTracks] = pixshift1; 
 	  
 	  if(pxarm1 == 0)
 	    nPixelTracks45++;

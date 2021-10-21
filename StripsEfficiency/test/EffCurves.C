@@ -1,17 +1,17 @@
-void EffCurves(Int_t dataset=1)
-{
-  TFile *f1;
-  if(dataset==1)
-    f1 = TFile::Open("EffstudiesMatchingDebugTest_2017B_0_999999.root");
-  if(dataset==2)
-    f1 = TFile::Open("EffstudiesMatchingDebugTest_2017C_0_999999.root");
-  if(dataset==3)
-    f1 = TFile::Open("EffstudiesMatchingDebugTest_2017D_0_999999.root");
-  if(dataset==4)
-    f1 = TFile::Open("EffstudiesMatchingDebugTest_2017E_0_999999.root");
-  if(dataset==5)
-    f1 = TFile::Open("EffstudiesMatchingDebugTest_2017F_0_999999.root");
+#include "TFile.h"
+#include "TCanvas.h"
+#include "TH1F.h"
+#include "TFile.h"
+#include "TLegend.h"
+#include "TH2F.h"
+#include "TF1.h"
+#include "TString.h"
+#include "TMath.h"
 
+
+void EffCurves(TString filename="EffstudiesMatchingDebugTestAllRunsAllTracksAllY_2017H_0_9999999.root")
+{
+  TFile *f1 = TFile::Open(filename);
 
   TCanvas *c1 = new TCanvas("c1","c1");
   c1->Divide(2,1);
@@ -63,21 +63,9 @@ void EffCurves(Int_t dataset=1)
 
 }
 
-void Eff2D(Int_t dataset=1)
+void Eff2D(TString filename="EffstudiesMatchingDebugTestAllRunsAllTracksAllY_2017H_0_9999999.root")
 {
-  TFile *f1;
-  if(dataset==1)
-    f1 = TFile::Open("EffstudiesMatchingDebugTest_2017B_0_999999.root");
-  if(dataset==2)
-    f1 = TFile::Open("EffstudiesMatchingDebugTest_2017C_0_999999_NoRunsRemoved.root");
-  if(dataset==3)
-    f1 = TFile::Open("EffstudiesMatchingDebugTest_2017D_0_999999.root");
-  if(dataset==4)
-    //    f1 = TFile::Open("EffstudiesMatchingDebugTest_2017E_0_999999.root");
-    f1 = TFile::Open("EffstudiesMatchingDebugTest_2017E_0_999999.root");
-  if(dataset==5)
-    f1 = TFile::Open("EffstudiesMatchingDebugTest_2017F_0_999999.root");
-
+  TFile *f1 = TFile::Open(filename);
 
   TCanvas *c1 = new TCanvas("c1","c1");
   c1->Divide(2,1);
@@ -266,10 +254,9 @@ void EffByDataset()
   TFile *f3;
   //  f1 = TFile::Open("EffstudiesMatchingDebugTest_2017E_0_999999.root");
   //  f2 = TFile::Open("EffstudiesMatchingDebugTest_BTagCSV_2017E_0_999999.root");
-  f3 = TFile::Open("EffstudiesMatchingDebugTest_JetHT_2017E_0_999999.root");
-
-  f1 = TFile::Open("EffstudiesMatchingDebugTest_2017B_0_999999.root");                                                                                                                   
-  f2 = TFile::Open("EffstudiesMatchingDebugTest_PixelQualityCuts_2017B_0_999999.root");
+  f1 = TFile::Open("EffstudiesMatchingDebugTestAllRunsAllTracksAllY_NOTrigger_2017H_0_9999999.root");
+  f3 = TFile::Open("EffstudiesMatchingDebugTestAllRunsAllTracksAllY_Trigger_2017H_0_9999999.root");
+  f2 = TFile::Open("EffstudiesMatchingDebugTestAllRunsAllTracksAllY_Run2_2017_2017H_0_9999999.root");
 
   TCanvas *c1 = new TCanvas("c1","c1");
   c1->Divide(2,1);
@@ -318,7 +305,7 @@ void EffByDataset()
   hn13el->SetMinimum(0); hn1103el->SetMinimum(0);
   hn13el->SetMaximum(1.05); hn1103el->SetMaximum(1.05);
   c1->cd(1);
-  hn13el->SetStats(0); hn13el->SetXTitle("#xi"); hn13el->SetYTitle("Efficiency"); hn13el->SetTitle("2017E, 45");
+  hn13el->SetStats(0); hn13el->SetXTitle("#xi"); hn13el->SetYTitle("Efficiency"); hn13el->SetTitle("2017H, 45");
   hn13el->GetXaxis()->SetRangeUser(0.02,0.15);
   hn13el->SetMarkerColor(1); hn13el->SetMarkerStyle(20); hn13el->SetLineWidth(3); hn13el->SetLineColor(1); hn13el->Draw("e");
 
@@ -327,7 +314,7 @@ void EffByDataset()
 
 
   c1->cd(2);
-  hn1103el->SetStats(0); hn1103el->SetXTitle("#xi"); hn1103el->SetYTitle("Efficiency"); hn1103el->SetTitle("2017E, 56");
+  hn1103el->SetStats(0); hn1103el->SetXTitle("#xi"); hn1103el->SetYTitle("Efficiency"); hn1103el->SetTitle("2017H, 56");
   hn1103el->GetXaxis()->SetRangeUser(0.02,0.2);
   hn1103el->SetMarkerColor(1); hn1103el->SetMarkerStyle(20); hn1103el->SetLineWidth(3); hn1103el->SetLineColor(1); hn1103el->Draw("e");
 
@@ -337,17 +324,18 @@ void EffByDataset()
 
 
   TLegend *l1 = new TLegend(0.6,0.2,0.9,0.5);
-  l1->AddEntry(hn1103el,"2017E, SingleElectron PD");
-  l1->AddEntry(hn1103b,"2017E, BTagCSV PD");
-  l1->AddEntry(hn1103j,"2017E, JetHT PD");
+  l1->AddEntry(hn1103el,"2017H, NoTrigger");
+  l1->AddEntry(hn1103b,"2017H, Trigger");
+  l1->AddEntry(hn1103j,"2017H, Run2_2017");
   //  l1->Draw("same");
 
 
 }
 
-void EffCategories()
+void EffCategories(TString filename="EffstudiesMatchingDebugTestAllRunsAllTracksAllY_2017H_0_9999999.root")
 {
-  TFile *f1 = TFile::Open("EffstudiesMatchingDebugTest_0_999999.root");
+  TFile * f1 = TFile::Open(filename);
+
 
   TCanvas *c1 = new TCanvas("c1","c1");
   c1->Divide(2,1);
