@@ -255,8 +255,8 @@ void EffByDataset()
   //  f1 = TFile::Open("EffstudiesMatchingDebugTest_2017E_0_999999.root");
   //  f2 = TFile::Open("EffstudiesMatchingDebugTest_BTagCSV_2017E_0_999999.root");
   f1 = TFile::Open("EffstudiesMatchingDebugTestAllRunsAllTracksAllY_NOTrigger_2017H_0_9999999.root");
-  f3 = TFile::Open("EffstudiesMatchingDebugTestAllRunsAllTracksAllY_Trigger_2017H_0_9999999.root");
   f2 = TFile::Open("EffstudiesMatchingDebugTestAllRunsAllTracksAllY_Run2_2017_2017H_0_9999999.root");
+  f3 = TFile::Open("EffstudiesMatchingDebugTestAllRunsAllTracksAllY_AllTrk_2017H_0_9999999.root");
 
   TCanvas *c1 = new TCanvas("c1","c1");
   c1->Divide(2,1);
@@ -326,7 +326,7 @@ void EffByDataset()
   TLegend *l1 = new TLegend(0.6,0.2,0.9,0.5);
   l1->AddEntry(hn1103el,"2017H, NoTrigger");
   l1->AddEntry(hn1103b,"2017H, Trigger");
-  l1->AddEntry(hn1103j,"2017H, Run2_2017");
+  l1->AddEntry(hn1103j,"2017H, All tracks");
   //  l1->Draw("same");
 
 

@@ -450,7 +450,7 @@ void StripsEfficiency::Loop(int runmin, int runmax, string era)
    //   TString outfilename = "EffstudiesMatchingDebugTest_BTagCSV_";
    //   TString outfilename = "EffstudiesMatchingDebugTest_JetHT_";
    //   TString outfilename = "EffstudiesMatchingDebugTest_PixelQualityCuts_";
-   TString outfilename = "EffstudiesMatchingDebugTestAllRunsAllTracksAllY_Run2_2017_";
+   TString outfilename = "EffstudiesMatchingDebugTestAllRunsAllTracksAllY_AllTrk_";
    outfilename += era;
    outfilename += "_";
    outfilename += runmin;
